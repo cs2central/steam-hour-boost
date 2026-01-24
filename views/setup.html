@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup - Hour Boost</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <h1>Hour Boost</h1>
+        </div>
+        <p class="login-subtitle">Create your admin account to get started</p>
+      </div>
+
+      <div class="alert alert-info mb-24">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>This is your first time running Hour Boost. Create an admin account to secure the web interface.</span>
+      </div>
+
+      <div id="error-message" class="alert alert-error" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <span id="error-text"></span>
+      </div>
+
+      <form id="setup-form" onsubmit="handleSetup(event)">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required autofocus>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" name="password" class="form-control" placeholder="Choose a password (min. 6 characters)" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">Confirm Password</label>
+          <input type="password" id="confirm-password" name="confirmPassword" class="form-control" placeholder="Confirm your password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-full btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <line x1="20" y1="8" x2="20" y2="14"/>
+            <line x1="23" y1="11" x2="17" y2="11"/>
+          </svg>
+          Create Account
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <p class="text-muted" style="font-size: 0.8rem;">
+          Companion app for <a href="https://github.com/cs2central/steam-authenticator-linux" target="_blank">steam-authenticator-linux</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function handleSetup(event) {
+      event.preventDefault();
+      const form = event.target;
+      const errorDiv = document.getElementById('error-message');
+      const errorText = document.getElementById('error-text');
+
+      if (form.password.value !== form.confirmPassword.value) {
+        errorText.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'flex';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: form.username.value,
+            password: form.password.value
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorText.textContent = data.error || 'Setup failed';
+          errorDiv.style.display = 'flex';
+          return;
+        }
+
+        window.location.href = '/login';
+      } catch (err) {
+        errorText.textContent = 'Connection error. Please try again.';
+        errorDiv.style.display = 'flex';
+      }
+    }
+  </script>
+</body>
+</html>

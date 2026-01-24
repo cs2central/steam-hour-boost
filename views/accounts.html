@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accounts - Hour Boost</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <h1>Hour Boost</h1>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="/" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+          <a href="/accounts" class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Accounts</a>
+          <a href="/mafiles" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>MAFiles</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/settings" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-links">
+          <a href="https://github.com/cs2central/steam-authenticator-linux" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+          <a href="https://discord.gg/cs2central" target="_blank" title="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.74 19.74 0 003.677 4.37a.07.07 0 00-.032.028C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.11 13.11 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.3 12.3 0 01-1.873.892.076.076 0 00-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 00.084.028 19.84 19.84 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/></svg></a>
+          <a href="https://cs2central.gg" target="_blank" title="Website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>
+        </div>
+        <div class="sidebar-version">Hour Boost v1.0.0</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="page-title">Steam Accounts</h1>
+            <p class="page-subtitle">Manage your Steam accounts and configure hour boosting</p>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-account-modal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Account
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Help Card -->
+        <div class="alert alert-info mb-24">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong>How it works:</strong> Add your Steam account credentials, link an MAFile for automatic Steam Guard, then click Start to begin boosting hours.
+            <a href="https://github.com/cs2central/steam-authenticator-linux" target="_blank">Get MAFiles from steam-authenticator-linux</a>
+          </div>
+        </div>
+
+        <!-- Accounts Table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Your Accounts
+            </span>
+          </div>
+          <div class="table-container">
+            <table class="table" id="accounts-table">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Status</th>
+                  <th>Steam Guard</th>
+                  <th>Games</th>
+                  <th>Persona</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accounts-tbody">
+                <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Account Modal -->
+  <div class="modal-overlay" id="add-account-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Steam Account</h3>
+        <button class="modal-close" onclick="closeModal('add-account-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-account-form" onsubmit="addAccount(event)">
+          <div class="form-group">
+            <label class="form-label">Steam Username</label>
+            <input type="text" name="username" class="form-control" placeholder="Your Steam login name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Steam Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Your Steam password" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Link MAFile (for Steam Guard)</label>
+            <select name="mafile" class="form-control" id="add-mafile-select">
+              <option value="">-- No MAFile (manual 2FA) --</option>
+            </select>
+            <p class="form-hint">MAFiles enable automatic Steam Guard. Import them from the MAFiles page first.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Games to Idle (App IDs)</label>
+            <input type="text" name="games" class="form-control" placeholder="730, 570, 440" value="730">
+            <p class="form-hint">Comma-separated Steam App IDs. Default: 730 (CS2). Max 32 games.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Steam Status</label>
+            <select name="persona" class="form-control">
+              <option value="1">Online</option>
+              <option value="3">Away</option>
+              <option value="7">Invisible</option>
+            </select>
+            <p class="form-hint">How you appear to friends while idling.</p>
+          </div>
+          <div class="modal-footer" style="margin: -20px; margin-top: 20px; padding: 16px 20px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('add-account-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Account Modal -->
+  <div class="modal-overlay" id="edit-account-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Account</h3>
+        <button class="modal-close" onclick="closeModal('edit-account-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-account-form" onsubmit="saveAccount(event)">
+          <input type="hidden" name="id" id="edit-id">
+          <div class="form-group">
+            <label class="form-label">Steam Username</label>
+            <input type="text" name="username" id="edit-username" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Steam Password</label>
+            <input type="password" name="password" id="edit-password" class="form-control" placeholder="Leave empty to keep current">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Link MAFile</label>
+            <select name="mafile" class="form-control" id="edit-mafile-select">
+              <option value="">-- No MAFile --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Games to Idle</label>
+            <input type="text" name="games" id="edit-games" class="form-control" placeholder="730, 570, 440">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Steam Status</label>
+            <select name="persona" id="edit-persona" class="form-control">
+              <option value="1">Online</option>
+              <option value="3">Away</option>
+              <option value="7">Invisible</option>
+            </select>
+          </div>
+          <div class="modal-footer" style="margin: -20px; margin-top: 20px; padding: 16px 20px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('edit-account-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let mafiles = [];
+
+    async function loadData() {
+      try {
+        const [accountsRes, mafilesRes] = await Promise.all([
+          API.get('/api/accounts'),
+          API.get('/api/mafiles')
+        ]);
+        mafiles = mafilesRes;
+        renderAccounts(accountsRes);
+        updateMafileSelects();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function updateMafileSelects() {
+      const options = '<option value="">-- No MAFile --</option>' +
+        mafiles.map(m => `<option value="${m.id}">${m.account_name}${m.shared_secret ? ' (2FA ready)' : ''}</option>`).join('');
+      document.getElementById('add-mafile-select').innerHTML = options;
+      document.getElementById('edit-mafile-select').innerHTML = options;
+    }
+
+    function renderAccounts(accounts) {
+      const tbody = document.getElementById('accounts-tbody');
+      if (accounts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 48px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:16px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          <h3 style="margin-bottom:8px;">No accounts yet</h3>
+          <p class="text-muted" style="margin-bottom:16px;">Add your first Steam account to start boosting hours.</p>
+          <button class="btn btn-primary" onclick="openModal('add-account-modal')">Add Account</button>
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = accounts.map(acc => {
+        const statusBadge = getStatusBadge(acc.status);
+        const guardBadge = acc.shared_secret ?
+          '<span class="badge badge-success"><span class="badge-dot"></span>Linked</span>' :
+          '<span class="badge badge-warning"><span class="badge-dot"></span>Manual</span>';
+        const games = (acc.games || []).slice(0, 3).map(g => getGameName(g.app_id || g)).join(', ');
+        const moreGames = (acc.games || []).length > 3 ? ` +${acc.games.length - 3}` : '';
+
+        return `<tr>
+          <td>
+            <div class="flex items-center gap-12">
+              <div class="account-avatar" style="width:36px;height:36px;font-size:0.9rem;">${acc.username.charAt(0).toUpperCase()}</div>
+              <div>
+                <div style="font-weight:500;">${acc.username}</div>
+                ${acc.steam_id ? `<div class="text-muted" style="font-size:0.75rem;">${acc.steam_id}</div>` : ''}
+              </div>
+            </div>
+          </td>
+          <td>${statusBadge}</td>
+          <td>${guardBadge}</td>
+          <td><span class="text-muted">${games}${moreGames}</span></td>
+          <td><span class="badge badge-muted">${acc.persona_state ? PERSONA_STATES[acc.persona_state]?.name || 'Online' : 'Online'}</span></td>
+          <td>
+            <div class="flex gap-8">
+              ${acc.status === 'idling' ?
+                `<button class="btn btn-danger btn-sm" onclick="stopIdling(${acc.id})">Stop</button>` :
+                `<button class="btn btn-success btn-sm" onclick="startIdling(${acc.id})">Start</button>`}
+              <button class="btn btn-secondary btn-sm" onclick="editAccount(${acc.id})">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="deleteAccount(${acc.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function getStatusBadge(status) {
+      const badges = {
+        'idling': '<span class="badge badge-info"><span class="badge-dot"></span>Idling</span>',
+        'online': '<span class="badge badge-success"><span class="badge-dot"></span>Online</span>',
+        'connecting': '<span class="badge badge-warning"><span class="badge-dot"></span>Connecting</span>',
+        'error': '<span class="badge badge-error"><span class="badge-dot"></span>Error</span>',
+        'offline': '<span class="badge badge-muted"><span class="badge-dot"></span>Offline</span>'
+      };
+      return badges[status] || badges['offline'];
+    }
+
+    async function addAccount(event) {
+      event.preventDefault();
+      const form = event.target;
+      try {
+        const data = {
+          username: form.username.value,
+          password: form.password.value,
+          mafile_id: form.mafile.value || null,
+          games: form.games.value.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
+          persona_state: parseInt(form.persona.value)
+        };
+        await API.post('/api/accounts', data);
+        if (data.mafile_id) {
+          const acc = await API.get('/api/accounts');
+          const newAcc = acc.find(a => a.username === data.username);
+          if (newAcc) await API.post(`/api/mafiles/${data.mafile_id}/link/${newAcc.id}`);
+        }
+        closeModal('add-account-modal');
+        form.reset();
+        form.games.value = '730';
+        loadData();
+        showToast('Account added successfully', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function editAccount(id) {
+      try {
+        const acc = await API.get(`/api/accounts/${id}`);
+        document.getElementById('edit-id').value = acc.id;
+        document.getElementById('edit-username').value = acc.username;
+        document.getElementById('edit-password').value = '';
+        document.getElementById('edit-games').value = (acc.games || []).map(g => g.app_id || g).join(', ');
+        document.getElementById('edit-persona').value = acc.persona_state || 1;
+
+        const linked = mafiles.find(m => m.linked_account_id === acc.id);
+        document.getElementById('edit-mafile-select').value = linked ? linked.id : '';
+
+        openModal('edit-account-modal');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function saveAccount(event) {
+      event.preventDefault();
+      const form = event.target;
+      const id = form.id.value;
+      try {
+        const data = {
+          username: form.username.value,
+          games: form.games.value.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
+          persona_state: parseInt(form.persona.value)
+        };
+        if (form.password.value) data.password = form.password.value;
+
+        await API.put(`/api/accounts/${id}`, data);
+        if (form.mafile.value) {
+          await API.post(`/api/mafiles/${form.mafile.value}/link/${id}`);
+        }
+        closeModal('edit-account-modal');
+        loadData();
+        showToast('Account updated', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteAccount(id) {
+      if (!confirm('Delete this account? This cannot be undone.')) return;
+      try {
+        await API.delete(`/api/accounts/${id}`);
+        loadData();
+        showToast('Account deleted', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function startIdling(id) {
+      try {
+        await API.post(`/api/accounts/${id}/start`);
+        loadData();
+        showToast('Started idling', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function stopIdling(id) {
+      try {
+        await API.post(`/api/accounts/${id}/stop`);
+        loadData();
+        showToast('Stopped idling', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 10000);
+  </script>
+</body>
+</html>

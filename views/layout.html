@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} - Hour Boost</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="{{page}}">
+  <header class="header">
+    <h1>Hour Boost</h1>
+    <nav class="nav">
+      <a href="/" class="{{#if isDashboard}}active{{/if}}">Dashboard</a>
+      <a href="/accounts" class="{{#if isAccounts}}active{{/if}}">Accounts</a>
+      <a href="/mafiles" class="{{#if isMafiles}}active{{/if}}">MAFiles</a>
+      <a href="/settings" class="{{#if isSettings}}active{{/if}}">Settings</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    {{content}}
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    function logout() {
+      fetch('/api/logout', { method: 'POST' })
+        .then(() => window.location.href = '/login');
+    }
+  </script>
+</body>
+</html>

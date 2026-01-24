@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  steam-hour-boost:
+    build: .
+    container_name: steam-hour-boost
+    restart: unless-stopped
+    ports:
+      - "8869:8869"
+    volumes:
+      # Persistent data storage
+      - ./data:/app/data
+      # MAFiles storage - mount your mafiles here
+      - ./mafiles:/app/mafiles
+    environment:
+      - NODE_ENV=production
+      - TZ=UTC
+    # Optional: limit resources for homeserver use
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M

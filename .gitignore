@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Data (contains credentials)
+data/
+*.db
+
+# MAFiles (sensitive Steam Guard secrets)
+mafiles/
+
+# Environment
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+
+# Other projects (don't upload)
+steam-authenticator-linux/
