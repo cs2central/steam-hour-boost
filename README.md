@@ -1,6 +1,6 @@
 <div align="center">
 
-# Hour Boost
+# Steam Hour Boost
 
 **Steam hour booster with a modern web UI**
 
