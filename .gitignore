@@ -2,11 +2,13 @@
 node_modules/
 
 # Data (contains credentials)
-data/
+data/*
+!data/.gitkeep
 *.db
 
 # MAFiles (sensitive Steam Guard secrets)
-mafiles/
+mafiles/*
+!mafiles/.gitkeep
 
 # Environment
 .env
