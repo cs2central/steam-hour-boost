@@ -15,6 +15,7 @@ class SteamSession {
     this.currentGames = [];
     this.reconnectAttempts = 0;
     this.reconnectTimeout = null;
+    this.isConnecting = false;
     this.sessionId = null;
 
     this.setupEventHandlers();
@@ -23,7 +24,15 @@ class SteamSession {
   setupEventHandlers() {
     this.client.on('loggedOn', () => {
       this.isLoggedIn = true;
+      this.isConnecting = false;
       this.reconnectAttempts = 0;
+
+      // Cancel any pending reconnect timer
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+
       logger.info(`Logged in successfully`, this.accountId);
       accountManager.updateStatus(this.accountId, 'online');
 
@@ -39,6 +48,19 @@ class SteamSession {
           steam_id: this.client.steamID.toString()
         });
       }
+
+      // Resume idling if we were idling before disconnect/error
+      if (this.currentGames.length > 0) {
+        const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
+        if (shouldIdle) {
+          this.isIdling = true;
+          this.sessionId = db.sessions.start(this.accountId, this.currentGames).lastInsertRowid;
+          logger.info(`Resuming idle for games: ${this.currentGames.join(', ')}`, this.accountId);
+          accountManager.updateStatus(this.accountId, 'idling');
+          accountManager.setIdling(this.accountId, true);
+          this.client.gamesPlayed(this.currentGames);
+        }
+      }
     });
 
     this.client.on('accountInfo', (name) => {
@@ -48,6 +70,7 @@ class SteamSession {
 
     this.client.on('error', (err) => {
       this.isLoggedIn = false;
+      this.isConnecting = false;
       this.isIdling = false;
       const errorMsg = err.message || String(err);
       logger.error(`Steam error: ${errorMsg}`, this.accountId);
@@ -70,7 +93,14 @@ class SteamSession {
 
     this.client.on('disconnected', (eresult, msg) => {
       this.isLoggedIn = false;
+      this.isConnecting = false;
       logger.warn(`Disconnected: ${msg} (${eresult})`, this.accountId);
+
+      // End current session tracking to prevent orphaned sessions
+      if (this.sessionId) {
+        db.sessions.end(this.sessionId);
+        this.sessionId = null;
+      }
 
       if (this.isIdling) {
         accountManager.updateStatus(this.accountId, 'offline');
@@ -117,15 +147,22 @@ class SteamSession {
 
     logger.info(`Scheduling reconnect in ${delay / 1000}s (attempt ${this.reconnectAttempts})`, this.accountId);
 
-    this.reconnectTimeout = setTimeout(() => {
-      if (this.isIdling || db.accounts.findById(this.accountId)?.is_idling) {
-        this.login().then(() => {
-          if (this.currentGames.length > 0) {
-            this.playGames(this.currentGames);
-          }
-        }).catch(err => {
-          logger.error(`Reconnect failed: ${err.message}`, this.accountId);
-        });
+    this.reconnectTimeout = setTimeout(async () => {
+      this.reconnectTimeout = null;
+
+      // Skip if already logged in or connecting (auto-relogin may have handled it)
+      if (this.isLoggedIn || this.isConnecting) {
+        return;
+      }
+
+      const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
+      if (!shouldIdle) return;
+
+      try {
+        await this.login();
+        // loggedOn handler will resume games automatically
+      } catch (err) {
+        logger.error(`Reconnect failed: ${err.message}`, this.accountId);
       }
     }, delay);
   }
@@ -137,6 +174,13 @@ class SteamSession {
         return;
       }
 
+      if (this.isConnecting) {
+        logger.debug(`Already connecting, skipping duplicate login`, this.accountId);
+        resolve();
+        return;
+      }
+
+      this.isConnecting = true;
       logger.info(`Attempting login`, this.accountId);
       accountManager.updateStatus(this.accountId, 'connecting');
 
@@ -158,6 +202,7 @@ class SteamSession {
       };
 
       const onError = (err) => {
+        this.isConnecting = false;
         this.client.removeListener('loggedOn', onLoggedOn);
         reject(err);
       };
@@ -165,7 +210,14 @@ class SteamSession {
       this.client.once('loggedOn', onLoggedOn);
       this.client.once('error', onError);
 
-      this.client.logOn(loginOptions);
+      try {
+        this.client.logOn(loginOptions);
+      } catch (err) {
+        this.isConnecting = false;
+        this.client.removeListener('loggedOn', onLoggedOn);
+        this.client.removeListener('error', onError);
+        reject(err);
+      }
     });
   }
 
@@ -188,12 +240,14 @@ class SteamSession {
   }
 
   stopGames() {
-    if (!this.isLoggedIn) {
-      return;
-    }
-
     this.isIdling = false;
     this.currentGames = [];
+
+    // Cancel pending reconnect since we're intentionally stopping
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
 
     // End session tracking
     if (this.sessionId) {
@@ -201,11 +255,15 @@ class SteamSession {
       this.sessionId = null;
     }
 
-    logger.info(`Stopped idling`, this.accountId);
-    accountManager.updateStatus(this.accountId, 'online');
+    accountManager.updateStatus(this.accountId, this.isLoggedIn ? 'online' : 'offline');
     accountManager.setIdling(this.accountId, false);
 
-    this.client.gamesPlayed([]);
+    if (this.isLoggedIn) {
+      this.client.gamesPlayed([]);
+      logger.info(`Stopped idling`, this.accountId);
+    } else {
+      logger.info(`Stopped idling (while disconnected)`, this.accountId);
+    }
   }
 
   logout() {
@@ -221,6 +279,7 @@ class SteamSession {
 
     this.isIdling = false;
     this.isLoggedIn = false;
+    this.isConnecting = false;
     this.currentGames = [];
 
     accountManager.updateStatus(this.accountId, 'offline');

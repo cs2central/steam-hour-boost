@@ -126,6 +126,18 @@ async function startServer() {
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 
+  // Prevent crashes from unhandled errors
+  process.on('uncaughtException', (err) => {
+    logger.error(`Uncaught exception: ${err.message}`);
+    console.error('Uncaught exception:', err.stack);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    const msg = reason instanceof Error ? reason.message : String(reason);
+    logger.error(`Unhandled rejection: ${msg}`);
+    console.error('Unhandled rejection:', reason);
+  });
+
   // Start server
   const server = app.listen(config.port, config.host, () => {
     logger.info(`Hour Boost started on http://${config.host}:${config.port}`);
