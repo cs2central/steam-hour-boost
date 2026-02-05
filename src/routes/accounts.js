@@ -36,7 +36,8 @@ router.get('/api/accounts', (req, res) => {
       total_games: acc.total_games,
       lockout_until: acc.lockout_until,
       api_last_refresh: acc.api_last_refresh,
-      incomplete: !acc.password || acc.password === '' // Account needs password to be set
+      incomplete: !acc.password || acc.password === '', // Account needs password to be set
+      is_private_profile: acc.steam_id && acc.api_last_refresh && (acc.total_games === 0 || acc.total_games === null)
     }));
     res.json(safeAccounts);
   } catch (err) {
@@ -253,7 +254,8 @@ router.get('/api/accounts/search', (req, res) => {
       trade_banned: acc.trade_banned,
       game_bans: acc.game_bans,
       lockout_until: acc.lockout_until,
-      incomplete: !acc.password || acc.password === ''
+      incomplete: !acc.password || acc.password === '',
+      is_private_profile: acc.steam_id && acc.api_last_refresh && (acc.total_games === 0 || acc.total_games === null)
     }));
 
     res.json(safeAccounts);

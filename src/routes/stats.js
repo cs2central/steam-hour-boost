@@ -66,6 +66,10 @@ router.get('/api/stats', async (req, res) => {
       // Total playtime across all games in library
       const totalLibraryPlaytime = playtimeData.reduce((sum, p) => sum + (p.playtime_forever || 0), 0);
 
+      // Detect if profile is private (has steam_id and was refreshed, but no game data)
+      const isPrivateProfile = acc.steam_id && acc.api_last_refresh &&
+        (acc.total_games === 0 || acc.total_games === null) && playtimeData.length === 0;
+
       return {
         id: acc.id,
         username: acc.username,
@@ -84,7 +88,8 @@ router.get('/api/stats', async (req, res) => {
           playtime_forever: p.playtime_forever,
           playtime_2weeks: p.playtime_2weeks
         })),
-        api_last_refresh: acc.api_last_refresh
+        api_last_refresh: acc.api_last_refresh,
+        is_private_profile: isPrivateProfile
       };
     }));
 

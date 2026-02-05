@@ -340,8 +340,11 @@
           : '<div class="text-muted">No games configured for idling</div>';
 
         // Top games from library
-        const topGamesHtml = acc.top_games.length > 0
-          ? acc.top_games.slice(0, 5).map(g => `
+        let topGamesHtml;
+        if (acc.is_private_profile) {
+          topGamesHtml = '<div class="text-muted" style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--warning);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Profile is private - game library data unavailable</div>';
+        } else if (acc.top_games.length > 0) {
+          topGamesHtml = acc.top_games.slice(0, 5).map(g => `
               <div class="playtime-item">
                 <div class="playtime-item-icon">${getGameNameLocal(g.app_id).charAt(0)}</div>
                 <div class="playtime-item-info">
@@ -349,15 +352,17 @@
                   <div class="playtime-item-hours"><strong>${formatHours(g.playtime_forever)}</strong></div>
                 </div>
               </div>
-            `).join('')
-          : '<div class="text-muted">No playtime data - refresh account from Steam API</div>';
+            `).join('');
+        } else {
+          topGamesHtml = '<div class="text-muted">No playtime data - refresh account from Steam API</div>';
+        }
 
         return `
           <div class="account-stats-card">
             <div class="account-stats-header">
               ${avatarHtml}${fallbackAvatar}
               <div style="flex:1;">
-                <div style="font-weight:600;font-size:1.1rem;">${displayName}</div>
+                <div style="font-weight:600;font-size:1.1rem;">${displayName}${acc.is_private_profile ? '<span class="private-profile-icon" title="Private Profile - Game data unavailable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--warning);margin-left:6px;vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>' : ''}</div>
                 <div class="text-muted" style="font-size:0.8rem;">${safeUsername}${safeSteamId ? ' · ' + safeSteamId : ''}</div>
               </div>
               ${statusBadge}
@@ -369,11 +374,11 @@
                   <div class="mini-stat-label">Total Boosted</div>
                 </div>
                 <div class="mini-stat">
-                  <div class="mini-stat-value">${formatHours(acc.total_library_playtime)}</div>
+                  <div class="mini-stat-value">${acc.is_private_profile ? '<span style="color:var(--text-muted);font-size:0.9rem;">Private</span>' : formatHours(acc.total_library_playtime)}</div>
                   <div class="mini-stat-label">Library Playtime</div>
                 </div>
                 <div class="mini-stat">
-                  <div class="mini-stat-value">${acc.total_games_in_library}</div>
+                  <div class="mini-stat-value">${acc.is_private_profile ? '<span style="color:var(--text-muted);font-size:0.9rem;">Private</span>' : acc.total_games_in_library}</div>
                   <div class="mini-stat-label">Games in Library</div>
                 </div>
                 <div class="mini-stat">

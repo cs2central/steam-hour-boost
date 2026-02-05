@@ -504,7 +504,7 @@
             <div class="account-card-header">
               ${avatarHtml}
               <div class="account-info">
-                <div class="account-name">${displayName}</div>
+                <div class="account-name">${displayName}${acc.is_private_profile ? '<span class="private-profile-icon" title="Private Profile - Game data unavailable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--warning);margin-left:4px;vertical-align:middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>' : ''}</div>
                 <div class="text-muted" style="font-size:0.75rem;">${safeUsername !== displayName ? safeUsername : safeSteamId}</div>
                 <span class="badge ${statusClass}">
                   <span class="badge-dot"></span>

@@ -17,7 +17,8 @@ router.get('/api/dashboard', (req, res) => {
       is_idling: acc.is_idling,
       total_games: acc.total_games,
       games: acc.games.map(g => g.app_id),
-      incomplete: !acc.password || acc.password === ''
+      incomplete: !acc.password || acc.password === '',
+      is_private_profile: acc.steam_id && acc.api_last_refresh && (acc.total_games === 0 || acc.total_games === null)
     }));
     const logs = logger.getRecent(20);
 

@@ -500,6 +500,17 @@ select.form-control {
   font-size: 0.875rem;
 }
 
+/* Private Profile Warning Icon */
+.private-profile-icon {
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+
+.private-profile-icon:hover {
+  opacity: 0.8;
+}
+
 /* Game Picker Chips */
 .game-picker {
   display: flex;
