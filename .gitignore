@@ -35,3 +35,7 @@ build/
 
 # Other projects (don't upload)
 steam-authenticator-linux/
+
+# Claude
+CLAUDE.md
+.claude/
