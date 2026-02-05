@@ -4,6 +4,7 @@ const AdmZip = require('adm-zip');
 const db = require('../models/database');
 const config = require('../config');
 const logger = require('./logger');
+const { encryptAccountCredentials } = require('../middleware/auth');
 
 class MAFileService {
   constructor() {
@@ -87,8 +88,81 @@ class MAFileService {
       identity_secret: parsed.identity_secret
     });
 
+    const mafileId = result.lastInsertRowid;
     logger.info(`Imported MAFile for ${parsed.account_name}`);
-    return { id: result.lastInsertRowid, ...parsed };
+
+    // Auto-create account from MAFile data
+    const account = this.autoCreateAccount(mafileId, parsed);
+
+    return { id: mafileId, accountId: account?.id, ...parsed };
+  }
+
+  /**
+   * Auto-create an account from MAFile data
+   * Account will be incomplete (no password) until user sets it
+   */
+  autoCreateAccount(mafileId, parsed) {
+    try {
+      // Check if account already exists with this username
+      const existing = db.accounts.findByUsername(parsed.account_name);
+      if (existing) {
+        logger.info(`Account ${parsed.account_name} already exists, linking MAFile`);
+        db.mafiles.linkToAccount(mafileId, existing.id);
+        return existing;
+      }
+
+      // Prepare account data - password is null (incomplete account)
+      const accountData = {
+        username: parsed.account_name,
+        password: null, // User needs to set this
+        shared_secret: parsed.shared_secret || null,
+        identity_secret: parsed.identity_secret || null,
+        steam_id: parsed.steam_id || null,
+        display_name: null,
+        persona_state: 1
+      };
+
+      // Encrypt secrets if available
+      const encryptedData = encryptAccountCredentials(accountData);
+
+      // Create account
+      const accountResult = db.accounts.create(encryptedData);
+      const accountId = accountResult.lastInsertRowid;
+
+      // Set default games (CS2)
+      db.games.setGames(accountId, config.defaultGames);
+
+      // Link MAFile to the new account
+      db.mafiles.linkToAccount(mafileId, accountId);
+
+      logger.info(`Auto-created account for ${parsed.account_name} (password required)`, accountId);
+
+      // Trigger Steam API refresh if we have steam_id
+      if (parsed.steam_id) {
+        this.refreshAccountData(accountId, parsed.steam_id);
+      }
+
+      return { id: accountId, username: parsed.account_name };
+    } catch (err) {
+      logger.error(`Failed to auto-create account for ${parsed.account_name}: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Refresh account data from Steam API (async, non-blocking)
+   */
+  async refreshAccountData(accountId, steamId) {
+    try {
+      const steamApiService = require('./steamApiService');
+      if (steamApiService.isConfigured()) {
+        await steamApiService.refreshAccount(accountId, steamId);
+        logger.info(`Refreshed Steam data for auto-created account ${accountId}`, accountId, 'API');
+      }
+    } catch (err) {
+      // Non-fatal - account still created, just without Steam data
+      logger.warn(`Could not refresh Steam data for account ${accountId}: ${err.message}`, accountId, 'API');
+    }
   }
 
   /**

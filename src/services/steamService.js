@@ -33,7 +33,10 @@ class SteamSession {
         this.reconnectTimeout = null;
       }
 
-      logger.info(`Logged in successfully`, this.accountId);
+      // Reset failed login counter on successful login
+      this.resetLockout();
+
+      logger.info(`Logged in successfully`, this.accountId, 'STEAM');
       accountManager.updateStatus(this.accountId, 'online');
 
       // Set persona state based on account settings
@@ -73,17 +76,26 @@ class SteamSession {
       this.isConnecting = false;
       this.isIdling = false;
       const errorMsg = err.message || String(err);
-      logger.error(`Steam error: ${errorMsg}`, this.accountId);
+      logger.error(`Steam error: ${errorMsg}`, this.accountId, 'STEAM');
       accountManager.updateStatus(this.accountId, 'error', errorMsg);
 
       // Handle specific errors
       if (err.eresult === SteamUser.EResult.InvalidPassword) {
-        logger.error('Invalid password', this.accountId);
+        logger.error('Invalid password', this.accountId, 'STEAM');
+        // Track failed login for lockout
+        this.handleFailedLogin();
         return; // Don't reconnect for invalid password
       }
 
       if (err.eresult === SteamUser.EResult.AccountLogonDenied) {
-        logger.error('Steam Guard code required', this.accountId);
+        logger.error('Steam Guard code required', this.accountId, 'STEAM');
+        return;
+      }
+
+      if (err.eresult === SteamUser.EResult.RateLimitExceeded) {
+        logger.error('Steam rate limit exceeded', this.accountId, 'STEAM');
+        // Set a longer lockout for rate limiting
+        this.handleRateLimited();
         return;
       }
 
@@ -175,13 +187,26 @@ class SteamSession {
       }
 
       if (this.isConnecting) {
-        logger.debug(`Already connecting, skipping duplicate login`, this.accountId);
+        logger.debug(`Already connecting, skipping duplicate login`, this.accountId, 'STEAM');
         resolve();
         return;
       }
 
+      // Check if account is locked out
+      if (this.isLockedOut()) {
+        const lockoutInfo = this.getLockoutInfo();
+        const lockoutUntil = new Date(lockoutInfo.lockout_until);
+        const remainingMs = lockoutUntil - Date.now();
+        const remainingMin = Math.ceil(remainingMs / 60000);
+
+        const error = new Error(`Account locked out for ${remainingMin} more minutes`);
+        logger.warn(error.message, this.accountId, 'STEAM');
+        reject(error);
+        return;
+      }
+
       this.isConnecting = true;
-      logger.info(`Attempting login`, this.accountId);
+      logger.info(`Attempting login`, this.accountId, 'STEAM');
       accountManager.updateStatus(this.accountId, 'connecting');
 
       const loginOptions = {
@@ -305,7 +330,76 @@ class SteamSession {
     }
     this.client.setPersona(state);
     const stateNames = { 1: 'Online', 3: 'Away', 7: 'Invisible' };
-    logger.info(`Changed persona state: ${stateNames[state] || state}`, this.accountId);
+    logger.info(`Changed persona state: ${stateNames[state] || state}`, this.accountId, 'STEAM');
+  }
+
+  /**
+   * Handle failed Steam login (for lockout tracking)
+   */
+  handleFailedLogin() {
+    db.accounts.incrementFailedLogins(this.accountId);
+
+    const lockoutInfo = db.accounts.getLockoutInfo(this.accountId);
+    const failedLogins = lockoutInfo?.failed_logins || 0;
+
+    if (failedLogins >= config.lockout.maxFailedLogins) {
+      // Calculate lockout duration with exponential backoff
+      const multiplier = Math.pow(2, failedLogins - config.lockout.maxFailedLogins);
+      const duration = Math.min(
+        config.lockout.baseDuration * multiplier,
+        config.lockout.maxDuration
+      );
+
+      const lockoutUntil = new Date(Date.now() + duration).toISOString();
+      db.accounts.setLockout(this.accountId, lockoutUntil);
+
+      logger.warn(
+        `Account locked out until ${lockoutUntil} (${failedLogins} failed attempts)`,
+        this.accountId,
+        'STEAM'
+      );
+
+      accountManager.updateStatus(this.accountId, 'locked', `Locked until ${lockoutUntil}`);
+    }
+  }
+
+  /**
+   * Handle Steam rate limiting
+   */
+  handleRateLimited() {
+    // Set a 1-hour lockout for rate limiting
+    const lockoutUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    db.accounts.setLockout(this.accountId, lockoutUntil);
+
+    logger.warn(
+      `Account rate limited, locked until ${lockoutUntil}`,
+      this.accountId,
+      'STEAM'
+    );
+
+    accountManager.updateStatus(this.accountId, 'locked', 'Rate limited by Steam');
+  }
+
+  /**
+   * Reset lockout on successful login
+   */
+  resetLockout() {
+    db.accounts.resetFailedLogins(this.accountId);
+    logger.debug('Reset failed login counter', this.accountId, 'STEAM');
+  }
+
+  /**
+   * Check if account is locked out
+   */
+  isLockedOut() {
+    return db.accounts.isLockedOut(this.accountId);
+  }
+
+  /**
+   * Get lockout information
+   */
+  getLockoutInfo() {
+    return db.accounts.getLockoutInfo(this.accountId);
   }
 }
 
@@ -325,7 +419,8 @@ class SteamService {
    * Start idling for an account
    */
   async startIdling(accountId) {
-    const account = accountManager.getById(accountId);
+    // Get account with decrypted credentials for Steam login
+    const account = accountManager.getDecryptedAccount(accountId);
     if (!account) {
       throw new Error('Account not found');
     }
@@ -341,6 +436,9 @@ class SteamService {
     if (!session) {
       session = new SteamSession(accountId, account);
       this.sessions.set(accountId, session);
+    } else {
+      // Update account data in case credentials changed
+      session.accountData = account;
     }
 
     // Login if needed

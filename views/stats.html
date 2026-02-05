@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats - Hour Boost</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-box-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .stat-box-label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .stat-box.highlight {
+      border-color: var(--primary);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(99, 102, 241, 0.02) 100%);
+    }
+    .stat-box.highlight .stat-box-value {
+      color: var(--primary);
+    }
+    .account-stats-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .account-stats-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+    }
+    .account-stats-body {
+      padding: 20px;
+    }
+    .playtime-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .playtime-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .playtime-item-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .playtime-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .playtime-item-name {
+      font-weight: 500;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .playtime-item-hours {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .playtime-item-hours strong {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .mini-stats {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .mini-stat {
+      text-align: center;
+    }
+    .mini-stat-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .mini-stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .boost-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--success);
+    }
+    .boost-badge.active {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <h1>Hour Boost</h1>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Main</div>
+          <a href="/" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+          <a href="/accounts" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Accounts</a>
+          <a href="/mafiles" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>MAFiles</a>
+          <a href="/stats" class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Stats</a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Settings</div>
+          <a href="/settings" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</a>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-links">
+          <a href="https://github.com/cs2central/steam-authenticator-linux" target="_blank" title="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+          <a href="https://discord.gg/cs2central" target="_blank" title="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.74 19.74 0 003.677 4.37a.07.07 0 00-.032.028C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.11 13.11 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.3 12.3 0 01-1.873.892.076.076 0 00-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 00.084.028 19.84 19.84 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/></svg></a>
+          <a href="https://cs2central.gg" target="_blank" title="Website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>
+        </div>
+        <div class="sidebar-version">Hour Boost v1.1.0-beta</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="page-title">Statistics</h1>
+            <p class="page-subtitle">Track your playtime and boost progress</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadStats()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Summary Stats -->
+        <div class="stats-summary" id="summary-stats">
+          <div class="stat-box highlight">
+            <div class="stat-box-value" id="total-boost-time">-</div>
+            <div class="stat-box-label">Total Boost Time</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-value" id="total-library-hours">-</div>
+            <div class="stat-box-label">Total Library Hours</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-value" id="total-accounts">-</div>
+            <div class="stat-box-label">Total Accounts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-value" id="active-idling">-</div>
+            <div class="stat-box-label">Currently Idling</div>
+          </div>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info mb-24">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong>Note:</strong> Steam playtime is fetched from the Steam Web API. Make sure you have configured your API key in Settings and refreshed your accounts to see accurate playtime data.
+          </div>
+        </div>
+
+        <!-- Per-Account Stats -->
+        <div id="account-stats-container">
+          <div class="text-center text-muted" style="padding: 48px;">Loading stats...</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Extended game names (adds to app.js GAME_NAMES)
+    const EXTRA_GAME_NAMES = {
+      730: 'Counter-Strike 2',
+      570: 'Dota 2',
+      440: 'Team Fortress 2',
+      252490: 'Rust',
+      578080: 'PUBG',
+      271590: 'GTA V',
+      359550: 'Rainbow Six Siege',
+      1172470: 'Apex Legends',
+      1623730: 'Palworld',
+      892970: 'Valheim',
+      105600: 'Terraria',
+      230410: 'Warframe',
+      252950: 'Rocket League',
+      1085660: 'Destiny 2',
+      1091500: 'Cyberpunk 2077',
+      493340: 'Planet Coaster',
+      346110: 'ARK',
+      3164500: 'Dark and Darker',
+      428690: 'Fortnite',
+      813780: 'Age of Empires II'
+    };
+
+    function getGameNameLocal(appId) {
+      return EXTRA_GAME_NAMES[appId] || GAME_NAMES[appId] || `Game ${appId}`;
+    }
+
+    function formatMinutes(minutes) {
+      if (minutes < 60) {
+        return `${minutes}m`;
+      }
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (hours < 24) {
+        return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+      }
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+    }
+
+    function formatHours(minutes) {
+      const hours = (minutes / 60).toFixed(1);
+      return `${hours}h`;
+    }
+
+    async function loadStats() {
+      try {
+        const data = await API.get('/api/stats');
+
+        // Update summary
+        document.getElementById('total-boost-time').textContent = formatMinutes(data.summary.total_boost_minutes);
+        document.getElementById('total-library-hours').textContent = formatHours(data.summary.total_library_minutes);
+        document.getElementById('total-accounts').textContent = data.summary.total_accounts;
+        document.getElementById('active-idling').textContent = data.summary.active_idling;
+
+        // Render account stats
+        renderAccountStats(data.accounts);
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+        document.getElementById('account-stats-container').innerHTML = `
+          <div class="alert alert-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div>Failed to load stats: ${err.message}</div>
+          </div>
+        `;
+      }
+    }
+
+    function renderAccountStats(accounts) {
+      const container = document.getElementById('account-stats-container');
+
+      if (accounts.length === 0) {
+        container.innerHTML = `
+          <div class="card">
+            <div class="card-body text-center" style="padding: 48px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:16px;"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+              <h3 style="margin-bottom:8px;">No stats yet</h3>
+              <p class="text-muted">Add accounts and start idling to see statistics.</p>
+              <a href="/accounts" class="btn btn-primary" style="margin-top:16px;">Add Account</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = accounts.map(acc => {
+        const initial = escapeHtml(acc.username.charAt(0).toUpperCase());
+        const safeAvatarUrl = acc.avatar_url ? escapeHtml(acc.avatar_url) : '';
+        const avatarHtml = acc.avatar_url
+          ? `<img src="${safeAvatarUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : '';
+        const fallbackAvatar = `<div class="account-avatar" style="width:48px;height:48px;${acc.avatar_url ? 'display:none;' : ''}">${initial}</div>`;
+
+        const displayName = escapeHtml(acc.display_name || acc.username);
+        const safeUsername = escapeHtml(acc.username);
+        const safeSteamId = escapeHtml(acc.steam_id || '');
+
+        // Status badge
+        let statusBadge = '';
+        if (acc.is_idling) {
+          statusBadge = `<span class="boost-badge active"><span class="badge-dot"></span>Boosting ${formatMinutes(acc.current_session_time)}</span>`;
+        }
+
+        // Games being idled with playtime
+        const gamesHtml = acc.games_idling.length > 0
+          ? acc.games_idling.map(g => `
+              <div class="playtime-item">
+                <div class="playtime-item-icon">${getGameNameLocal(g.app_id).charAt(0)}</div>
+                <div class="playtime-item-info">
+                  <div class="playtime-item-name">${getGameNameLocal(g.app_id)}</div>
+                  <div class="playtime-item-hours"><strong>${formatHours(g.playtime_forever)}</strong> total${g.playtime_2weeks > 0 ? ` / ${formatHours(g.playtime_2weeks)} last 2 weeks` : ''}</div>
+                </div>
+              </div>
+            `).join('')
+          : '<div class="text-muted">No games configured for idling</div>';
+
+        // Top games from library
+        const topGamesHtml = acc.top_games.length > 0
+          ? acc.top_games.slice(0, 5).map(g => `
+              <div class="playtime-item">
+                <div class="playtime-item-icon">${getGameNameLocal(g.app_id).charAt(0)}</div>
+                <div class="playtime-item-info">
+                  <div class="playtime-item-name">${getGameNameLocal(g.app_id)}</div>
+                  <div class="playtime-item-hours"><strong>${formatHours(g.playtime_forever)}</strong></div>
+                </div>
+              </div>
+            `).join('')
+          : '<div class="text-muted">No playtime data - refresh account from Steam API</div>';
+
+        return `
+          <div class="account-stats-card">
+            <div class="account-stats-header">
+              ${avatarHtml}${fallbackAvatar}
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:1.1rem;">${displayName}</div>
+                <div class="text-muted" style="font-size:0.8rem;">${safeUsername}${safeSteamId ? ' · ' + safeSteamId : ''}</div>
+              </div>
+              ${statusBadge}
+            </div>
+            <div class="account-stats-body">
+              <div class="mini-stats mb-24">
+                <div class="mini-stat">
+                  <div class="mini-stat-value">${formatMinutes(acc.total_boost_time)}</div>
+                  <div class="mini-stat-label">Total Boosted</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-value">${formatHours(acc.total_library_playtime)}</div>
+                  <div class="mini-stat-label">Library Playtime</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-value">${acc.total_games_in_library}</div>
+                  <div class="mini-stat-label">Games in Library</div>
+                </div>
+                <div class="mini-stat">
+                  <div class="mini-stat-value">${acc.games_idling.length}</div>
+                  <div class="mini-stat-label">Games Idling</div>
+                </div>
+              </div>
+
+              <h4 style="margin-bottom:12px;font-size:0.9rem;color:var(--text-secondary);">Games Being Idled</h4>
+              <div class="playtime-grid mb-24">
+                ${gamesHtml}
+              </div>
+
+              <h4 style="margin-bottom:12px;font-size:0.9rem;color:var(--text-secondary);">Top Games by Playtime</h4>
+              <div class="playtime-grid">
+                ${topGamesHtml}
+              </div>
+
+              ${acc.api_last_refresh ? `<div class="text-muted" style="margin-top:16px;font-size:0.75rem;">Last Steam API refresh: ${new Date(acc.api_last_refresh).toLocaleString()}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load stats on page load
+    loadStats();
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadStats, 30000);
+  </script>
+</body>
+</html>

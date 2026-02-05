@@ -1,6 +1,7 @@
 const db = require('../models/database');
 const config = require('../config');
 const logger = require('./logger');
+const { encryptAccountCredentials, decryptAccountCredentials, getEncryptionKey } = require('../middleware/auth');
 
 class AccountManager {
   constructor() {
@@ -31,8 +32,8 @@ class AccountManager {
       throw new Error('Account with this username already exists');
     }
 
-    // Create account
-    const result = db.accounts.create({
+    // Prepare account data with encryption
+    const accountData = {
       username: data.username,
       password: data.password,
       shared_secret: data.shared_secret || null,
@@ -40,7 +41,13 @@ class AccountManager {
       steam_id: data.steam_id || null,
       display_name: data.display_name || null,
       persona_state: data.persona_state || 1
-    });
+    };
+
+    // Encrypt sensitive fields
+    const encryptedData = encryptAccountCredentials(accountData);
+
+    // Create account
+    const result = db.accounts.create(encryptedData);
 
     const accountId = result.lastInsertRowid;
     logger.debug(`Account created with ID: ${accountId}`);
@@ -57,11 +64,16 @@ class AccountManager {
       if (mafile) {
         logger.debug(`Found MAFile: ${mafile.account_name}, shared_secret exists: ${!!mafile.shared_secret}`);
         db.mafiles.linkToAccount(data.mafile_id, accountId);
-        // Update account with MAFile secrets
-        db.accounts.update(accountId, {
+        // Update account with MAFile secrets (encrypted) and steam_id
+        const secretsData = encryptAccountCredentials({
           shared_secret: mafile.shared_secret,
           identity_secret: mafile.identity_secret
         });
+        // Also copy steam_id from MAFile if available
+        if (mafile.steam_id) {
+          secretsData.steam_id = mafile.steam_id;
+        }
+        db.accounts.update(accountId, secretsData);
         logger.debug(`Updated account with MAFile secrets`);
       } else {
         logger.warn(`MAFile ${data.mafile_id} not found`);
@@ -134,7 +146,9 @@ class AccountManager {
     if (data.persona_state !== undefined) updateData.persona_state = data.persona_state;
 
     if (Object.keys(updateData).length > 0) {
-      db.accounts.update(id, updateData);
+      // Encrypt sensitive fields before saving
+      const encryptedData = encryptAccountCredentials(updateData);
+      db.accounts.update(id, encryptedData);
     }
 
     // Update games if provided
@@ -235,6 +249,31 @@ class AccountManager {
    */
   getIdlingAccounts() {
     return db.accounts.getIdlingAccounts();
+  }
+
+  /**
+   * Get account with decrypted credentials (for Steam login)
+   * This should only be used internally by steamService
+   */
+  getDecryptedAccount(id) {
+    const account = db.accounts.findById(id);
+    if (!account) return null;
+
+    // Decrypt credentials
+    const decrypted = decryptAccountCredentials(account);
+    decrypted.games = db.games.getGames(id);
+    return decrypted;
+  }
+
+  /**
+   * Search accounts with filters
+   */
+  search(query) {
+    const accounts = db.accounts.search(query);
+    return accounts.map(acc => {
+      acc.games = db.games.getGames(acc.id);
+      return acc;
+    });
   }
 }
 

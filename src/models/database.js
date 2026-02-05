@@ -14,17 +14,58 @@ let SQL = null;
 // Run database migrations for schema changes
 function runMigrations() {
   try {
-    // Check if persona_state column exists in accounts table
+    // Check existing columns in accounts table
     const tableInfo = db.exec("PRAGMA table_info(accounts)");
     if (tableInfo.length > 0) {
       const columns = tableInfo[0].values.map(row => row[1]);
+
+      // Add persona_state column
       if (!columns.includes('persona_state')) {
-        console.log('[DB] Running migration: Adding persona_state column');
+        // Migration: Running migration: Adding persona_state column');
         db.run('ALTER TABLE accounts ADD COLUMN persona_state INTEGER DEFAULT 1');
+      }
+
+      // Add encrypted flag column
+      if (!columns.includes('encrypted')) {
+        // Migration: Running migration: Adding encrypted column');
+        db.run('ALTER TABLE accounts ADD COLUMN encrypted INTEGER DEFAULT 0');
+      }
+
+      // Add lockout columns for account protection
+      if (!columns.includes('failed_logins')) {
+        // Migration: Running migration: Adding lockout columns');
+        db.run('ALTER TABLE accounts ADD COLUMN failed_logins INTEGER DEFAULT 0');
+        db.run('ALTER TABLE accounts ADD COLUMN last_failed_login DATETIME');
+        db.run('ALTER TABLE accounts ADD COLUMN lockout_until DATETIME');
+      }
+
+      // Add Steam API data columns
+      if (!columns.includes('profile_visibility')) {
+        // Migration: Running migration: Adding Steam API columns');
+        db.run('ALTER TABLE accounts ADD COLUMN profile_visibility INTEGER');
+        db.run('ALTER TABLE accounts ADD COLUMN vac_banned INTEGER DEFAULT 0');
+        db.run('ALTER TABLE accounts ADD COLUMN trade_banned INTEGER DEFAULT 0');
+        db.run('ALTER TABLE accounts ADD COLUMN game_bans INTEGER DEFAULT 0');
+        db.run('ALTER TABLE accounts ADD COLUMN account_created DATETIME');
+        db.run('ALTER TABLE accounts ADD COLUMN total_games INTEGER');
+        db.run('ALTER TABLE accounts ADD COLUMN api_last_refresh DATETIME');
+      }
+    }
+
+    // Check existing columns in logs table
+    const logsInfo = db.exec("PRAGMA table_info(logs)");
+    if (logsInfo.length > 0) {
+      const logColumns = logsInfo[0].values.map(row => row[1]);
+
+      // Add category column
+      if (!logColumns.includes('category')) {
+        // Migration: Running migration: Adding category column to logs');
+        db.run("ALTER TABLE logs ADD COLUMN category TEXT DEFAULT 'SYSTEM'");
+        db.run('CREATE INDEX IF NOT EXISTS idx_logs_category ON logs(category)');
       }
     }
   } catch (err) {
-    console.error('[DB] Migration error:', err.message);
+    // Migration error (logged silently to avoid circular dependency with logger)
   }
 }
 
@@ -120,6 +161,7 @@ async function initializeDatabase() {
       account_id INTEGER,
       level TEXT NOT NULL,
       message TEXT NOT NULL,
+      category TEXT DEFAULT 'SYSTEM',
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
     )
@@ -133,19 +175,41 @@ async function initializeDatabase() {
     )
   `);
 
-  // Create indexes
+  db.run(`
+    -- Account playtime tracking (from Steam API)
+    CREATE TABLE IF NOT EXISTS account_playtime (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      account_id INTEGER NOT NULL,
+      app_id INTEGER NOT NULL,
+      playtime_forever INTEGER DEFAULT 0,
+      playtime_2weeks INTEGER DEFAULT 0,
+      last_played DATETIME,
+      FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+      UNIQUE(account_id, app_id)
+    )
+  `);
+
+  // Create indexes (category index created in migration after column exists)
   db.run('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)');
   db.run('CREATE INDEX IF NOT EXISTS idx_logs_account ON logs(account_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_sessions_account ON sessions(account_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_account_games_account ON account_games(account_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_account_playtime_account ON account_playtime(account_id)');
 
   // Run migrations for existing databases
   runMigrations();
 
+  // Create category index (safe to run after migrations ensure column exists)
+  try {
+    db.run('CREATE INDEX IF NOT EXISTS idx_logs_category ON logs(category)');
+  } catch (e) {
+    // Ignore if column doesn't exist yet (shouldn't happen after migration)
+  }
+
   // Save database
   saveDatabase();
 
-  console.log('[DB] Database initialized');
+  // Migration: Database initialized');
 }
 
 // Save database to disk
@@ -198,7 +262,7 @@ function run(sql, params = []) {
       lastInsertRowid = result[0].values[0][0];
     }
   } catch (e) {
-    console.error('Failed to get lastInsertRowid:', e);
+    // Silent fail: lastInsertRowid not available
   }
 
   const changes = db.getRowsModified();
@@ -239,13 +303,18 @@ const accountMethods = {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [
       data.username,
-      data.password,
+      data.password || '', // Empty string for incomplete accounts (password required)
       data.shared_secret || null,
       data.identity_secret || null,
       data.steam_id || null,
       data.display_name || null,
       data.persona_state || 1
     ]);
+  },
+
+  // Check if account is incomplete (missing password)
+  isIncomplete(account) {
+    return !account.password || account.password === '';
   },
 
   findById(id) {
@@ -305,6 +374,87 @@ const accountMethods = {
 
   getIdlingAccounts() {
     return all('SELECT * FROM accounts WHERE is_idling = 1');
+  },
+
+  // Lockout methods
+  incrementFailedLogins(id) {
+    return run(`
+      UPDATE accounts
+      SET failed_logins = COALESCE(failed_logins, 0) + 1,
+          last_failed_login = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [id]);
+  },
+
+  resetFailedLogins(id) {
+    return run(`
+      UPDATE accounts
+      SET failed_logins = 0,
+          lockout_until = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [id]);
+  },
+
+  setLockout(id, until) {
+    return run(`
+      UPDATE accounts
+      SET lockout_until = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [until, id]);
+  },
+
+  isLockedOut(id) {
+    const account = get('SELECT lockout_until FROM accounts WHERE id = ?', [id]);
+    if (!account || !account.lockout_until) return false;
+    return new Date(account.lockout_until) > new Date();
+  },
+
+  getLockoutInfo(id) {
+    return get('SELECT failed_logins, last_failed_login, lockout_until FROM accounts WHERE id = ?', [id]);
+  },
+
+  // Search and filter
+  search(query = {}) {
+    let sql = 'SELECT * FROM accounts WHERE 1=1';
+    const params = [];
+
+    if (query.q) {
+      sql += ' AND (username LIKE ? OR display_name LIKE ? OR steam_id LIKE ?)';
+      const searchTerm = `%${query.q}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    if (query.status) {
+      sql += ' AND status = ?';
+      params.push(query.status);
+    }
+
+    if (query.hasGuard === 'true') {
+      sql += ' AND shared_secret IS NOT NULL';
+    } else if (query.hasGuard === 'false') {
+      sql += ' AND shared_secret IS NULL';
+    }
+
+    if (query.isIdling === 'true') {
+      sql += ' AND is_idling = 1';
+    } else if (query.isIdling === 'false') {
+      sql += ' AND is_idling = 0';
+    }
+
+    // Sorting
+    const sortBy = query.sortBy || 'created_at';
+    const order = query.order === 'asc' ? 'ASC' : 'DESC';
+    const allowedSorts = ['username', 'display_name', 'status', 'created_at', 'updated_at'];
+    if (allowedSorts.includes(sortBy)) {
+      sql += ` ORDER BY ${sortBy} ${order}`;
+    } else {
+      sql += ' ORDER BY created_at DESC';
+    }
+
+    return all(sql, params);
   }
 };
 
@@ -398,14 +548,56 @@ const sessionMethods = {
   }
 };
 
-// Log methods
-const logMethods = {
-  add(level, message, accountId = null) {
-    return run('INSERT INTO logs (level, message, account_id) VALUES (?, ?, ?)',
-      [level, message, accountId]);
+// Playtime methods (from Steam API)
+const playtimeMethods = {
+  upsert(accountId, data) {
+    return run(`
+      INSERT INTO account_playtime (account_id, app_id, playtime_forever, playtime_2weeks, last_played)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(account_id, app_id) DO UPDATE SET
+        playtime_forever = excluded.playtime_forever,
+        playtime_2weeks = excluded.playtime_2weeks,
+        last_played = excluded.last_played
+    `, [
+      accountId,
+      data.app_id,
+      data.playtime_forever || 0,
+      data.playtime_2weeks || 0,
+      data.last_played || null
+    ]);
   },
 
-  getRecent(limit = 50) {
+  getByAccount(accountId) {
+    return all('SELECT * FROM account_playtime WHERE account_id = ? ORDER BY playtime_forever DESC', [accountId]);
+  },
+
+  getByGame(accountId, appId) {
+    return get('SELECT * FROM account_playtime WHERE account_id = ? AND app_id = ?', [accountId, appId]);
+  },
+
+  deleteByAccount(accountId) {
+    return run('DELETE FROM account_playtime WHERE account_id = ?', [accountId]);
+  }
+};
+
+// Log methods
+const logMethods = {
+  add(level, message, accountId = null, category = 'SYSTEM') {
+    return run('INSERT INTO logs (level, message, account_id, category) VALUES (?, ?, ?, ?)',
+      [level, message, accountId, category]);
+  },
+
+  getRecent(limit = 50, category = null) {
+    if (category) {
+      return all(`
+        SELECT l.*, a.username as account_name
+        FROM logs l
+        LEFT JOIN accounts a ON l.account_id = a.id
+        WHERE l.category = ?
+        ORDER BY l.timestamp DESC
+        LIMIT ?
+      `, [category, limit]);
+    }
     return all(`
       SELECT l.*, a.username as account_name
       FROM logs l
@@ -418,6 +610,11 @@ const logMethods = {
   getByAccount(accountId, limit = 100) {
     return all('SELECT * FROM logs WHERE account_id = ? ORDER BY timestamp DESC LIMIT ?',
       [accountId, limit]);
+  },
+
+  getByCategory(category, limit = 100) {
+    return all('SELECT * FROM logs WHERE category = ? ORDER BY timestamp DESC LIMIT ?',
+      [category, limit]);
   },
 
   cleanup(daysToKeep) {
@@ -456,5 +653,6 @@ module.exports = {
   mafiles: mafileMethods,
   sessions: sessionMethods,
   logs: logMethods,
+  playtime: playtimeMethods,
   settings: settingsMethods
 };

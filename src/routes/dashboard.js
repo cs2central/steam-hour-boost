@@ -10,9 +10,14 @@ router.get('/api/dashboard', (req, res) => {
     const accounts = accountManager.getAll().map(acc => ({
       id: acc.id,
       username: acc.username,
+      display_name: acc.display_name,
+      avatar_url: acc.avatar_url,
+      steam_id: acc.steam_id,
       status: acc.status,
       is_idling: acc.is_idling,
-      games: acc.games.map(g => g.app_id)
+      total_games: acc.total_games,
+      games: acc.games.map(g => g.app_id),
+      incomplete: !acc.password || acc.password === ''
     }));
     const logs = logger.getRecent(20);
 

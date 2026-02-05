@@ -30,6 +30,12 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // View helpers
 function sendView(res, viewName) {
   const viewPath = path.join(__dirname, '..', 'views', `${viewName}.html`);
+  // Disable browser caching for HTML pages
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
   res.sendFile(viewPath);
 }
 
@@ -47,9 +53,11 @@ async function startServer() {
   // Load services after DB is ready
   const logger = require('./services/logger');
   const steamService = require('./services/steamService');
-  const { requireAuth, checkSetup } = require('./middleware/auth');
+  const steamApiService = require('./services/steamApiService');
+  const { requireAuth, checkSetup, getEncryptionKey } = require('./middleware/auth');
+  const { rateLimiters } = require('./middleware/rateLimiter');
 
-  // Routes - Auth (no auth required)
+  // Routes - Auth (no auth required, but rate limited)
   const authRoutes = require('./routes/auth');
   app.use(authRoutes);
 
@@ -74,17 +82,22 @@ async function startServer() {
   // Protected routes - require authentication
   app.use(requireAuth);
 
+  // Apply general API rate limiter to all protected routes
+  app.use('/api', rateLimiters.api);
+
   // Protected API routes
   const accountRoutes = require('./routes/accounts');
   const gameRoutes = require('./routes/games');
   const mafileRoutes = require('./routes/mafiles');
   const settingsRoutes = require('./routes/settings');
+  const statsRoutes = require('./routes/stats');
 
   app.use(dashboardRoutes);
   app.use(accountRoutes);
   app.use(gameRoutes);
   app.use(mafileRoutes);
   app.use(settingsRoutes);
+  app.use(statsRoutes);
 
   // Protected pages
   app.get('/', (req, res) => {
@@ -115,10 +128,19 @@ async function startServer() {
     res.status(500).json({ error: 'Internal server error' });
   });
 
+  // Initialize Steam API service if encryption key is available
+  const encryptionKey = getEncryptionKey();
+  if (encryptionKey) {
+    steamApiService.initialize(db, encryptionKey).catch(err => {
+      logger.error(`Failed to initialize Steam API service: ${err.message}`);
+    });
+  }
+
   // Graceful shutdown
   function shutdown() {
     logger.info('Shutting down...');
     steamService.shutdown();
+    steamApiService.shutdown();
     db.saveDatabase();
     process.exit(0);
   }

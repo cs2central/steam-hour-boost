@@ -370,6 +370,15 @@ a:hover {
   background: #ff6b63;
 }
 
+.btn-warning {
+  background: var(--warning);
+  color: #fff;
+}
+
+.btn-warning:hover {
+  background: #e0a82e;
+}
+
 .btn-secondary {
   background: var(--bg-card);
   border-color: var(--border-color);
@@ -447,6 +456,116 @@ a:hover {
 
 select.form-control {
   cursor: pointer;
+}
+
+/* File Input Styling */
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.file-input-wrapper input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.file-input-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.file-input-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--text-muted);
+}
+
+.file-input-name {
+  margin-left: 12px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Game Picker Chips */
+.game-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.game-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.game-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.game-chip.selected {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.game-chip .game-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+/* Selected Games Display */
+.selected-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.selected-game-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--success-bg);
+  border: 1px solid var(--success);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--success);
+}
+
+.selected-game-tag .remove-game {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.selected-game-tag .remove-game:hover {
+  opacity: 1;
 }
 
 /* Tables */

@@ -17,6 +17,8 @@ Companion app for [steam-authenticator-linux](https://github.com/cs2central/stea
 
 </div>
 
+> **Disclaimer**: This software is provided for educational and personal use only. Using automated tools may violate Steam's Terms of Service. The developers are not responsible for any account restrictions, suspensions, or bans. Use at your own risk.
+
 ---
 
 ## Screenshots
@@ -218,14 +220,17 @@ services:
 
 ## Security
 
-- Web UI protected by username/password authentication
-- Steam credentials stored in local SQLite database
-- MAFiles stored unencrypted (same as desktop authenticator apps)
+- **Credential Encryption**: Steam passwords and secrets are encrypted at rest using AES-256-GCM with PBKDF2 key derivation (100k iterations)
+- **Web UI Authentication**: Protected by bcrypt-hashed passwords
+- **Rate Limiting**: Built-in protection against brute force attacks
+- **Account Lockout**: Automatic lockout after failed Steam login attempts
+- **Secure Export**: Encrypted backups with custom password protection
 
 **For production deployment:**
 - Use a reverse proxy with HTTPS (nginx, Caddy)
 - Set a strong `SESSION_SECRET`
 - Restrict network access to trusted IPs
+- Keep your admin password secure - it's used to derive the encryption key
 
 ---
 
@@ -275,6 +280,26 @@ services:
 [![GitHub](https://img.shields.io/badge/View%20on-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/cs2central/steam-hour-boost)
 
 </div>
+
+---
+
+## Disclaimer
+
+This software is provided "as is" without warranty of any kind. By using this software, you acknowledge and agree that:
+
+1. **Terms of Service**: Using automated tools to idle games may violate Steam's Terms of Service. Valve may take action against accounts found to be using such tools, including but not limited to warnings, suspensions, or permanent bans.
+
+2. **No Liability**: The developers, contributors, and maintainers of this project are not responsible for any consequences resulting from the use of this software, including but not limited to:
+   - Account restrictions or bans
+   - Loss of games, items, or achievements
+   - VAC or game bans
+   - Any other penalties imposed by Valve or game publishers
+
+3. **No Affiliation**: This project is not affiliated with, endorsed by, or connected to Valve Corporation, Steam, or any game publishers. All trademarks are the property of their respective owners.
+
+4. **Personal Use**: This software is intended for educational and personal use only. Use responsibly and at your own risk.
+
+5. **Security**: While credentials are encrypted, you are responsible for securing your system and keeping your data safe.
 
 ---
 

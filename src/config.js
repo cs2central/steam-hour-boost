@@ -25,5 +25,34 @@ module.exports = {
   maxReconnectAttempts: 10,
 
   // Logging
-  logRetentionDays: 30
+  logRetentionDays: 30,
+
+  // Rate limiting
+  rateLimit: {
+    login: {
+      maxAttempts: 5,
+      windowMs: 15 * 60 * 1000 // 15 minutes
+    },
+    setup: {
+      maxAttempts: 3,
+      windowMs: 60 * 60 * 1000 // 1 hour
+    },
+    api: {
+      maxAttempts: 100,
+      windowMs: 60 * 1000 // 1 minute
+    }
+  },
+
+  // Account lockout (Steam login failures)
+  lockout: {
+    maxFailedLogins: 3,
+    baseDuration: 30 * 60 * 1000, // 30 minutes
+    maxDuration: 24 * 60 * 60 * 1000 // 24 hours max
+  },
+
+  // Steam Web API
+  steamApi: {
+    baseUrl: 'https://api.steampowered.com',
+    defaultRefreshInterval: 6 * 60 * 60 * 1000 // 6 hours
+  }
 };

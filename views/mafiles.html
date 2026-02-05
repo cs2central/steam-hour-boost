@@ -45,6 +45,12 @@
             </svg>
             MAFiles
           </a>
+          <a href="/stats" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+            </svg>
+            Stats
+          </a>
         </div>
         <div class="nav-section">
           <div class="nav-section-title">Settings</div>
@@ -77,7 +83,7 @@
             </svg>
           </a>
         </div>
-        <div class="sidebar-version">Hour Boost v1.0.0</div>
+        <div class="sidebar-version">Hour Boost v1.1.0-beta</div>
       </div>
     </aside>
 
@@ -146,7 +152,13 @@
         <form onsubmit="importFolder(event)">
           <div class="form-group">
             <label class="form-label">Select Folder</label>
-            <input type="file" id="folder-input" class="form-control" webkitdirectory directory multiple required style="padding:10px;">
+            <div class="file-input-wrapper">
+              <span class="file-input-btn" id="folder-input-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Choose Folder
+              </span>
+              <input type="file" id="folder-input" webkitdirectory directory multiple required onchange="updateFileLabel(this, 'folder-input-label', 'folder')">
+            </div>
           </div>
           <p class="form-hint">Select the folder containing your .maFile files.</p>
           <div class="modal-footer" style="margin:-20px;margin-top:20px;padding:16px 20px;">
@@ -168,7 +180,13 @@
         <form onsubmit="importFiles(event)">
           <div class="form-group">
             <label class="form-label">Select Files</label>
-            <input type="file" id="files-input" class="form-control" multiple accept=".maFile,.mafile,.zip" required style="padding:10px;">
+            <div class="file-input-wrapper">
+              <span class="file-input-btn" id="files-input-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Choose Files
+              </span>
+              <input type="file" id="files-input" multiple accept=".maFile,.mafile,.zip" required onchange="updateFileLabel(this, 'files-input-label', 'file')">
+            </div>
           </div>
           <p class="form-hint">Select .maFile files or a .zip archive.</p>
           <div class="modal-footer" style="margin:-20px;margin-top:20px;padding:16px 20px;">
@@ -182,6 +200,18 @@
 
   <script src="/js/app.js"></script>
   <script>
+    function updateFileLabel(input, labelId, type) {
+      const label = document.getElementById(labelId);
+      const count = input.files.length;
+      if (count === 0) {
+        label.innerHTML = type === 'folder' ?
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Choose Folder' :
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Choose Files';
+      } else {
+        label.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg> ${count} file${count > 1 ? 's' : ''} selected`;
+      }
+    }
+
     async function loadMafiles() {
       try {
         const mafiles = await API.get('/api/mafiles');

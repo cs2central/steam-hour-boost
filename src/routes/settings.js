@@ -2,13 +2,28 @@ const express = require('express');
 const router = express.Router();
 const db = require('../models/database');
 const logger = require('../services/logger');
-const { changePassword } = require('../middleware/auth');
+const steamApiService = require('../services/steamApiService');
+const { changePassword, getEncryptionKey } = require('../middleware/auth');
+const { encrypt, isEncrypted } = require('../utils/encryption');
 
 // Get all settings
 router.get('/api/settings', (req, res) => {
   try {
     const settings = db.settings.getAll();
-    res.json(settings);
+
+    // Don't expose sensitive values, just indicate if they're set
+    const safeSettings = {
+      ...settings,
+      steam_api_key: settings.steam_api_key ? '********' : null,
+      encryption_salt: undefined // Never expose
+    };
+    delete safeSettings.encryption_salt;
+
+    // Add computed fields
+    safeSettings.steam_api_configured = !!settings.steam_api_key;
+    safeSettings.api_refresh_interval = settings.api_refresh_interval || 0;
+
+    res.json(safeSettings);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -104,6 +119,76 @@ router.post('/api/reset', (req, res) => {
 
     logger.info('All data has been reset');
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Save Steam API key (encrypted)
+router.post('/api/settings/steam-api-key', async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+
+    // Allow clearing the API key
+    if (!apiKey) {
+      await steamApiService.setApiKey(null);
+      steamApiService.stopPeriodicRefresh();
+      logger.info('Steam API key removed', null, 'API');
+      return res.json({ success: true, message: 'API key removed' });
+    }
+
+    // Validate API key format (should be 32 hex characters)
+    if (!/^[A-F0-9]{32}$/i.test(apiKey)) {
+      return res.status(400).json({ error: 'Invalid API key format' });
+    }
+
+    await steamApiService.setApiKey(apiKey);
+    logger.info('Steam API key updated', null, 'API');
+
+    res.json({ success: true, message: 'API key saved' });
+  } catch (err) {
+    logger.error(`Failed to save Steam API key: ${err.message}`, null, 'API');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update API refresh interval
+router.put('/api/settings/api-refresh-interval', (req, res) => {
+  try {
+    const { interval } = req.body;
+
+    // Validate interval (0 = disabled, or 1 hour to 24 hours)
+    const intervalMs = parseInt(interval);
+
+    if (isNaN(intervalMs) || (intervalMs !== 0 && (intervalMs < 3600000 || intervalMs > 86400000))) {
+      return res.status(400).json({
+        error: 'Invalid interval. Use 0 to disable, or 1-24 hours in milliseconds.'
+      });
+    }
+
+    steamApiService.setRefreshInterval(intervalMs);
+
+    logger.info(`API refresh interval set to ${intervalMs}ms`, null, 'API');
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Manually refresh all accounts
+router.post('/api/settings/refresh-all-accounts', async (req, res) => {
+  try {
+    if (!steamApiService.isConfigured()) {
+      return res.status(400).json({ error: 'Steam API key not configured' });
+    }
+
+    const result = await steamApiService.refreshAllAccounts();
+
+    res.json({
+      success: true,
+      refreshed: result.refreshed,
+      errors: result.errors
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

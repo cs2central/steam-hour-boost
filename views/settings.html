@@ -45,6 +45,12 @@
             </svg>
             MAFiles
           </a>
+          <a href="/stats" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+            </svg>
+            Stats
+          </a>
         </div>
         <div class="nav-section">
           <div class="nav-section-title">Settings</div>
@@ -77,7 +83,7 @@
             </svg>
           </a>
         </div>
-        <div class="sidebar-version">Hour Boost v1.0.0</div>
+        <div class="sidebar-version">Hour Boost v1.1.0-beta</div>
       </div>
     </aside>
 
@@ -144,23 +150,102 @@
             </div>
           </div>
 
+          <!-- Steam Web API -->
+          <div class="card">
+            <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Steam Web API</span></div>
+            <div class="card-body">
+              <p class="text-muted mb-16">Connect to Steam's Web API to fetch profile data, avatars, ban status, and playtime information.</p>
+              <form id="api-key-form" onsubmit="saveApiKey(event)">
+                <div class="form-group">
+                  <label class="form-label">Steam API Key</label>
+                  <div class="flex gap-8">
+                    <input type="password" id="api-key" class="form-control" placeholder="Enter your Steam Web API key">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearApiKey()">Clear</button>
+                  </div>
+                  <p class="form-hint">Get your API key at <a href="https://steamcommunity.com/dev/apikey" target="_blank">steamcommunity.com/dev/apikey</a></p>
+                </div>
+              </form>
+              <div id="api-status" class="mb-16" style="display:none;">
+                <span class="badge badge-success">API Key Configured</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Auto-Refresh Interval</label>
+                <select id="api-refresh-interval" class="form-control" onchange="setRefreshInterval()">
+                  <option value="0">Disabled</option>
+                  <option value="3600000">Every hour</option>
+                  <option value="21600000">Every 6 hours</option>
+                  <option value="86400000">Daily</option>
+                </select>
+                <p class="form-hint">How often to automatically refresh Steam API data for all accounts</p>
+              </div>
+              <button class="btn btn-secondary" onclick="refreshAllAccounts()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Refresh All Accounts Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Import/Export -->
+          <div class="card">
+            <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import / Export</span></div>
+            <div class="card-body">
+              <div class="mb-24">
+                <h4 style="margin-bottom:8px;">Export Accounts</h4>
+                <p class="text-muted mb-12">Download all accounts as an encrypted backup file.</p>
+                <div class="flex gap-8 items-end">
+                  <div class="form-group" style="margin:0;flex:1;">
+                    <input type="password" id="export-password" class="form-control" placeholder="Create export password (min 6 chars)">
+                  </div>
+                  <button class="btn btn-secondary" onclick="exportAccounts()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                  </button>
+                </div>
+              </div>
+              <div>
+                <h4 style="margin-bottom:8px;">Import Accounts</h4>
+                <p class="text-muted mb-12">Restore accounts from a backup file.</p>
+                <div class="flex gap-8 flex-wrap items-end">
+                  <div class="form-group" style="margin:0;">
+                    <div class="file-input-wrapper">
+                      <input type="file" id="import-file" accept=".json" onchange="updateImportFileName()">
+                      <button type="button" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                        Choose File
+                      </button>
+                      <span class="file-input-name" id="import-file-name">No file selected</span>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin:0;flex:1;min-width:150px;">
+                    <input type="password" id="import-password" class="form-control" placeholder="Enter export password">
+                  </div>
+                  <button class="btn btn-secondary" onclick="importAccounts()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Game IDs Reference -->
           <div class="card">
             <div class="card-header"><span class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Common Game IDs</span></div>
             <div class="table-container">
               <table class="table">
-                <thead><tr><th>Game</th><th>App ID</th><th>Copy</th></tr></thead>
+                <thead><tr><th>Game</th><th>App ID</th><th style="width:60px;"></th></tr></thead>
                 <tbody>
-                  <tr><td>Counter-Strike 2</td><td class="text-muted">730</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('730')">Copy</button></td></tr>
-                  <tr><td>Dota 2</td><td class="text-muted">570</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('570')">Copy</button></td></tr>
-                  <tr><td>Team Fortress 2</td><td class="text-muted">440</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('440')">Copy</button></td></tr>
-                  <tr><td>Rust</td><td class="text-muted">252490</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('252490')">Copy</button></td></tr>
-                  <tr><td>PUBG</td><td class="text-muted">578080</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('578080')">Copy</button></td></tr>
-                  <tr><td>GTA V</td><td class="text-muted">271590</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('271590')">Copy</button></td></tr>
-                  <tr><td>Apex Legends</td><td class="text-muted">1172470</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('1172470')">Copy</button></td></tr>
-                  <tr><td>Rocket League</td><td class="text-muted">252950</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('252950')">Copy</button></td></tr>
-                  <tr><td>Terraria</td><td class="text-muted">105600</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('105600')">Copy</button></td></tr>
-                  <tr><td>Warframe</td><td class="text-muted">230410</td><td><button class="btn btn-ghost btn-sm" onclick="copyId('230410')">Copy</button></td></tr>
+                  <tr><td>Counter-Strike 2</td><td><code>730</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('730')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Dota 2</td><td><code>570</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('570')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Team Fortress 2</td><td><code>440</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('440')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Rust</td><td><code>252490</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('252490')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>PUBG</td><td><code>578080</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('578080')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>GTA V</td><td><code>271590</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('271590')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Apex Legends</td><td><code>1172470</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('1172470')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Rocket League</td><td><code>252950</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('252950')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Terraria</td><td><code>105600</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('105600')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
+                  <tr><td>Warframe</td><td><code>230410</code></td><td><button class="btn btn-secondary btn-sm" onclick="copyId('230410')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button></td></tr>
                 </tbody>
               </table>
             </div>
@@ -196,7 +281,7 @@
               <div class="grid gap-16" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
                 <div>
                   <h4 style="margin-bottom:4px;">Hour Boost</h4>
-                  <p class="text-muted">Version 1.0.0</p>
+                  <p class="text-muted">Version 1.1.0-beta</p>
                 </div>
                 <div>
                   <h4 style="margin-bottom:4px;">License</h4>
@@ -228,6 +313,31 @@
                   </a>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Disclaimer Warning -->
+          <div class="card" style="border-color: var(--warning); background: rgba(245, 158, 11, 0.05);">
+            <div class="card-header" style="border-bottom-color: var(--warning);">
+              <span class="card-title" style="color: var(--warning);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--warning);">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                Important Disclaimer
+              </span>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom: 12px;"><strong>Use at Your Own Risk</strong></p>
+              <ul class="text-muted" style="margin-left: 20px; line-height: 1.8;">
+                <li>This software is provided for <strong>educational and personal use only</strong>.</li>
+                <li>Using automated tools to idle games may <strong>violate Steam's Terms of Service</strong>.</li>
+                <li>The developers are <strong>not responsible</strong> for any account restrictions, suspensions, bans, or other consequences.</li>
+                <li>This project is <strong>not affiliated with, endorsed by, or connected to Valve Corporation</strong> or Steam.</li>
+                <li>Your account credentials are stored locally and encrypted, but you are responsible for securing your system.</li>
+              </ul>
+              <p class="text-muted" style="margin-top: 12px; font-style: italic;">By using this software, you acknowledge that you understand and accept these risks.</p>
             </div>
           </div>
         </div>
@@ -289,6 +399,16 @@
       showToast('Copied ' + id, 'success');
     }
 
+    function updateImportFileName() {
+      const input = document.getElementById('import-file');
+      const nameSpan = document.getElementById('import-file-name');
+      if (input.files.length > 0) {
+        nameSpan.textContent = input.files[0].name;
+      } else {
+        nameSpan.textContent = 'No file selected';
+      }
+    }
+
     async function clearLogs() {
       if (!confirm('Are you sure you want to clear all logs? This cannot be undone.')) return;
       try {
@@ -309,6 +429,148 @@
         setTimeout(() => window.location.href = '/setup', 1500);
       } catch (err) {
         showToast(err.message, 'error');
+      }
+    }
+
+    // Steam API functions
+    async function saveApiKey(event) {
+      event.preventDefault();
+      const apiKey = document.getElementById('api-key').value;
+
+      if (apiKey && apiKey.length !== 32) {
+        showToast('API key should be 32 characters', 'error');
+        return;
+      }
+
+      try {
+        await API.post('/api/settings/steam-api-key', { apiKey });
+        document.getElementById('api-key').value = '';
+        showToast('API key saved', 'success');
+        loadSettings();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function clearApiKey() {
+      if (!confirm('Remove Steam API key?')) return;
+      try {
+        await API.post('/api/settings/steam-api-key', { apiKey: null });
+        showToast('API key removed', 'success');
+        loadSettings();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function setRefreshInterval() {
+      const interval = document.getElementById('api-refresh-interval').value;
+      try {
+        await API.put('/api/settings/api-refresh-interval', { interval: parseInt(interval) });
+        showToast('Refresh interval updated', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function refreshAllAccounts() {
+      try {
+        showToast('Refreshing all accounts...', 'info');
+        const result = await API.post('/api/settings/refresh-all-accounts');
+        showToast(`Refreshed ${result.refreshed} accounts (${result.errors} errors)`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Import/Export functions
+    async function exportAccounts() {
+      const password = document.getElementById('export-password').value;
+
+      if (!password || password.length < 6) {
+        showToast('Export password must be at least 6 characters', 'error');
+        return;
+      }
+
+      try {
+        const result = await API.post('/api/accounts/export', { exportPassword: password });
+
+        // Download as JSON file
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hour-boost-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        document.getElementById('export-password').value = '';
+        showToast(`Exported ${result.data.accountCount} accounts`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function importAccounts() {
+      const fileInput = document.getElementById('import-file');
+      const password = document.getElementById('import-password').value;
+
+      if (!fileInput.files.length) {
+        showToast('Please select a backup file', 'error');
+        return;
+      }
+
+      if (!password) {
+        showToast('Please enter the export password', 'error');
+        return;
+      }
+
+      try {
+        const file = fileInput.files[0];
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        const result = await API.post('/api/accounts/import', {
+          importPassword: password,
+          data: data
+        });
+
+        fileInput.value = '';
+        document.getElementById('import-password').value = '';
+
+        let message = `Imported ${result.imported} accounts`;
+        if (result.skipped > 0) message += `, skipped ${result.skipped} duplicates`;
+        if (result.errors.length > 0) message += `, ${result.errors.length} errors`;
+
+        showToast(message, result.errors.length > 0 ? 'warning' : 'success');
+
+        if (result.errors.length > 0) {
+          console.error('Import errors:', result.errors);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const settings = await API.get('/api/settings');
+        document.getElementById('default-persona').value = settings.default_persona_state || '1';
+        document.getElementById('auto-start').value = settings.auto_start || 'true';
+        document.getElementById('log-retention').value = settings.log_retention_days || '7';
+
+        // API settings
+        const apiStatus = document.getElementById('api-status');
+        if (settings.steam_api_configured) {
+          apiStatus.style.display = 'block';
+        } else {
+          apiStatus.style.display = 'none';
+        }
+        document.getElementById('api-refresh-interval').value = settings.api_refresh_interval || '0';
+      } catch (err) {
+        console.error('Failed to load settings:', err);
       }
     }
 

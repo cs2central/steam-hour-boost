@@ -39,3 +39,22 @@ steam-authenticator-linux/
 # Claude
 CLAUDE.md
 .claude/
+
+# Backups and temp files
+*.bak
+*.backup
+*.tmp
+*.temp
+*~
+
+# Session/cache files
+sessions/
+.cache/
+
+# Test files
+coverage/
+.nyc_output/
+
+# Sensitive exports
+*-backup-*.json
+hour-boost-backup-*.json

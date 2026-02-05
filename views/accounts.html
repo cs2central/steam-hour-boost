@@ -22,6 +22,7 @@
           <a href="/" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
           <a href="/accounts" class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Accounts</a>
           <a href="/mafiles" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>MAFiles</a>
+          <a href="/stats" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Stats</a>
         </div>
         <div class="nav-section">
           <div class="nav-section-title">Settings</div>
@@ -34,7 +35,7 @@
           <a href="https://discord.gg/cs2central" target="_blank" title="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.74 19.74 0 003.677 4.37a.07.07 0 00-.032.028C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.11 13.11 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.3 12.3 0 01-1.873.892.076.076 0 00-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 00.084.028 19.84 19.84 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418z"/></svg></a>
           <a href="https://cs2central.gg" target="_blank" title="Website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></a>
         </div>
-        <div class="sidebar-version">Hour Boost v1.0.0</div>
+        <div class="sidebar-version">Hour Boost v1.1.0-beta</div>
       </div>
     </aside>
 
@@ -62,6 +63,32 @@
           </div>
         </div>
 
+        <!-- Search and Filters -->
+        <div class="card mb-16">
+          <div class="card-body">
+            <div class="flex gap-12 flex-wrap items-center">
+              <div class="flex-1" style="min-width: 200px;">
+                <input type="text" id="search-input" class="form-control" placeholder="Search by username, display name, or Steam ID..." oninput="debounceSearch()">
+              </div>
+              <select id="status-filter" class="form-control" style="width: auto;" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="idling">Idling</option>
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+                <option value="error">Error</option>
+                <option value="locked">Locked</option>
+                <option value="incomplete">Setup Required</option>
+              </select>
+              <select id="guard-filter" class="form-control" style="width: auto;" onchange="applyFilters()">
+                <option value="">All Accounts</option>
+                <option value="true">With Steam Guard</option>
+                <option value="false">Without Steam Guard</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear Filters</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Accounts Table -->
         <div class="card">
           <div class="card-header">
@@ -69,6 +96,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
               Your Accounts
             </span>
+            <span id="account-count" class="text-muted" style="font-size: 0.875rem;"></span>
           </div>
           <div class="table-container">
             <table class="table" id="accounts-table">
@@ -117,9 +145,21 @@
             <p class="form-hint">MAFiles enable automatic Steam Guard. Import them from the MAFiles page first.</p>
           </div>
           <div class="form-group">
-            <label class="form-label">Games to Idle (App IDs)</label>
-            <input type="text" name="games" class="form-control" placeholder="730, 570, 440" value="730">
-            <p class="form-hint">Comma-separated Steam App IDs. Default: 730 (CS2). Max 32 games.</p>
+            <label class="form-label">Games to Idle</label>
+            <div class="game-picker" id="add-game-picker">
+              <button type="button" class="game-chip selected" data-appid="730" onclick="toggleGameChip(this, 'add')">CS2</button>
+              <button type="button" class="game-chip" data-appid="570" onclick="toggleGameChip(this, 'add')">Dota 2</button>
+              <button type="button" class="game-chip" data-appid="440" onclick="toggleGameChip(this, 'add')">TF2</button>
+              <button type="button" class="game-chip" data-appid="252490" onclick="toggleGameChip(this, 'add')">Rust</button>
+              <button type="button" class="game-chip" data-appid="578080" onclick="toggleGameChip(this, 'add')">PUBG</button>
+              <button type="button" class="game-chip" data-appid="271590" onclick="toggleGameChip(this, 'add')">GTA V</button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="add-custom-game" class="form-control" placeholder="Custom App ID (e.g. 1172470)" style="flex: 1;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomGame('add')">Add</button>
+            </div>
+            <input type="hidden" name="games" id="add-games-input" value="730">
+            <p class="form-hint">Click games above or enter custom App IDs. Find IDs at <a href="https://steamdb.info" target="_blank">SteamDB.info</a>. Max 32 games.</p>
           </div>
           <div class="form-group">
             <label class="form-label">Steam Status</label>
@@ -153,9 +193,10 @@
             <label class="form-label">Steam Username</label>
             <input type="text" name="username" id="edit-username" class="form-control" required>
           </div>
-          <div class="form-group">
-            <label class="form-label">Steam Password</label>
+          <div class="form-group" id="edit-password-group">
+            <label class="form-label" id="edit-password-label">Steam Password</label>
             <input type="password" name="password" id="edit-password" class="form-control" placeholder="Leave empty to keep current">
+            <p class="form-hint" id="edit-password-hint">Leave empty to keep current password.</p>
           </div>
           <div class="form-group">
             <label class="form-label">Link MAFile</label>
@@ -165,7 +206,20 @@
           </div>
           <div class="form-group">
             <label class="form-label">Games to Idle</label>
-            <input type="text" name="games" id="edit-games" class="form-control" placeholder="730, 570, 440">
+            <div class="game-picker" id="edit-game-picker">
+              <button type="button" class="game-chip" data-appid="730" onclick="toggleGameChip(this, 'edit')">CS2</button>
+              <button type="button" class="game-chip" data-appid="570" onclick="toggleGameChip(this, 'edit')">Dota 2</button>
+              <button type="button" class="game-chip" data-appid="440" onclick="toggleGameChip(this, 'edit')">TF2</button>
+              <button type="button" class="game-chip" data-appid="252490" onclick="toggleGameChip(this, 'edit')">Rust</button>
+              <button type="button" class="game-chip" data-appid="578080" onclick="toggleGameChip(this, 'edit')">PUBG</button>
+              <button type="button" class="game-chip" data-appid="271590" onclick="toggleGameChip(this, 'edit')">GTA V</button>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="text" id="edit-custom-game" class="form-control" placeholder="Custom App ID" style="flex: 1;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomGame('edit')">Add</button>
+            </div>
+            <input type="hidden" name="games" id="edit-games-input" value="">
+            <p class="form-hint">Click games above or enter custom App IDs.</p>
           </div>
           <div class="form-group">
             <label class="form-label">Steam Status</label>
@@ -187,6 +241,92 @@
   <script src="/js/app.js"></script>
   <script>
     let mafiles = [];
+
+    // Use PERSONA_STATES and GAME_NAMES from app.js
+    // Local helper for short game names in UI
+    const SHORT_GAME_NAMES = {
+      730: 'CS2',
+      570: 'Dota 2',
+      440: 'TF2',
+      252490: 'Rust',
+      578080: 'PUBG',
+      271590: 'GTA V',
+      359550: 'R6 Siege',
+      1172470: 'Apex',
+      1623730: 'Palworld',
+      892970: 'Valheim'
+    };
+
+    function getShortGameName(appId) {
+      return SHORT_GAME_NAMES[appId] || `ID: ${appId}`;
+    }
+
+    // Game Picker Functions
+    function toggleGameChip(chip, prefix) {
+      chip.classList.toggle('selected');
+      updateGamesInput(prefix);
+    }
+
+    function updateGamesInput(prefix) {
+      const picker = document.getElementById(`${prefix}-game-picker`);
+      const input = document.getElementById(`${prefix}-games-input`);
+      const selected = picker.querySelectorAll('.game-chip.selected');
+      const appIds = Array.from(selected).map(c => c.dataset.appid);
+      input.value = appIds.join(',');
+    }
+
+    function addCustomGame(prefix) {
+      const customInput = document.getElementById(`${prefix}-custom-game`);
+      const appId = parseInt(customInput.value.trim());
+      if (!appId || isNaN(appId)) {
+        showToast('Please enter a valid App ID', 'error');
+        return;
+      }
+
+      const picker = document.getElementById(`${prefix}-game-picker`);
+      // Check if chip already exists
+      const existing = picker.querySelector(`[data-appid="${appId}"]`);
+      if (existing) {
+        existing.classList.add('selected');
+      } else {
+        // Add new chip
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'game-chip selected';
+        chip.dataset.appid = appId;
+        chip.textContent = SHORT_GAME_NAMES[appId] || `ID: ${appId}`;
+        chip.onclick = function() { toggleGameChip(this, prefix); };
+        picker.appendChild(chip);
+      }
+
+      customInput.value = '';
+      updateGamesInput(prefix);
+    }
+
+    function setGamePickerSelection(prefix, gameIds) {
+      const picker = document.getElementById(`${prefix}-game-picker`);
+      // Reset all chips
+      picker.querySelectorAll('.game-chip').forEach(c => c.classList.remove('selected'));
+
+      gameIds.forEach(id => {
+        const appId = id.app_id || id;
+        const existing = picker.querySelector(`[data-appid="${appId}"]`);
+        if (existing) {
+          existing.classList.add('selected');
+        } else {
+          // Add new chip for custom game
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'game-chip selected';
+          chip.dataset.appid = appId;
+          chip.textContent = SHORT_GAME_NAMES[appId] || `ID: ${appId}`;
+          chip.onclick = function() { toggleGameChip(this, prefix); };
+          picker.appendChild(chip);
+        }
+      });
+
+      updateGamesInput(prefix);
+    }
 
     async function loadData() {
       try {
@@ -211,6 +351,9 @@
 
     function renderAccounts(accounts) {
       const tbody = document.getElementById('accounts-tbody');
+      const countEl = document.getElementById('account-count');
+      countEl.textContent = `(${accounts.length} account${accounts.length !== 1 ? 's' : ''})`;
+
       if (accounts.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="padding: 48px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;color:var(--text-muted);margin-bottom:16px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
@@ -222,20 +365,39 @@
       }
 
       tbody.innerHTML = accounts.map(acc => {
-        const statusBadge = getStatusBadge(acc.status);
+        const statusBadge = getStatusBadge(acc.status, acc.lockout_until);
         const guardBadge = acc.shared_secret ?
           '<span class="badge badge-success"><span class="badge-dot"></span>Linked</span>' :
           '<span class="badge badge-warning"><span class="badge-dot"></span>Manual</span>';
-        const games = (acc.games || []).slice(0, 3).map(g => getGameName(g.app_id || g)).join(', ');
+        const games = (acc.games || []).slice(0, 3).map(g => getShortGameName(g.app_id || g)).join(', ');
         const moreGames = (acc.games || []).length > 3 ? ` +${acc.games.length - 3}` : '';
+
+        // Avatar: use Steam avatar if available, otherwise initials (escaped for XSS prevention)
+        const initial = escapeHtml(acc.username.charAt(0).toUpperCase());
+        const safeAvatarUrl = acc.avatar_url ? escapeHtml(acc.avatar_url) : '';
+        const avatarHtml = acc.avatar_url ?
+          `<img src="${safeAvatarUrl}" class="account-avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="account-avatar" style="width:36px;height:36px;font-size:0.9rem;display:none;">${initial}</div>` :
+          `<div class="account-avatar" style="width:36px;height:36px;font-size:0.9rem;">${initial}</div>`;
+
+        // Display name (escaped for XSS prevention)
+        const displayName = escapeHtml(acc.display_name || acc.username);
+        const safeUsername = escapeHtml(acc.username);
+        const safeSteamId = escapeHtml(acc.steam_id || '');
+
+        // Ban indicators
+        let banBadges = '';
+        if (acc.vac_banned) banBadges += '<span class="badge badge-error" style="font-size:0.65rem;margin-left:4px;">VAC</span>';
+        if (acc.trade_banned) banBadges += '<span class="badge badge-error" style="font-size:0.65rem;margin-left:4px;">Trade</span>';
+        if (acc.game_bans > 0) banBadges += '<span class="badge badge-warning" style="font-size:0.65rem;margin-left:4px;">' + acc.game_bans + ' Ban</span>';
+        if (acc.incomplete) banBadges += '<span class="badge badge-warning" style="font-size:0.65rem;margin-left:4px;">Setup Required</span>';
 
         return `<tr>
           <td>
             <div class="flex items-center gap-12">
-              <div class="account-avatar" style="width:36px;height:36px;font-size:0.9rem;">${acc.username.charAt(0).toUpperCase()}</div>
+              ${avatarHtml}
               <div>
-                <div style="font-weight:500;">${acc.username}</div>
-                ${acc.steam_id ? `<div class="text-muted" style="font-size:0.75rem;">${acc.steam_id}</div>` : ''}
+                <div style="font-weight:500;">${displayName}${banBadges}</div>
+                <div class="text-muted" style="font-size:0.75rem;">${safeUsername}${safeSteamId ? ' \u00b7 ' + safeSteamId : ''}</div>
               </div>
             </div>
           </td>
@@ -245,10 +407,17 @@
           <td><span class="badge badge-muted">${acc.persona_state ? PERSONA_STATES[acc.persona_state]?.name || 'Online' : 'Online'}</span></td>
           <td>
             <div class="flex gap-8">
-              ${acc.status === 'idling' ?
-                `<button class="btn btn-danger btn-sm" onclick="stopIdling(${acc.id})">Stop</button>` :
-                `<button class="btn btn-success btn-sm" onclick="startIdling(${acc.id})">Start</button>`}
-              <button class="btn btn-secondary btn-sm" onclick="editAccount(${acc.id})">Edit</button>
+              ${acc.incomplete ?
+                `<button class="btn btn-warning btn-sm" onclick="editAccount(${acc.id})">Set Password</button>` :
+                (acc.lockout_until && new Date(acc.lockout_until) > new Date() ?
+                  `<button class="btn btn-secondary btn-sm" disabled title="Account locked">Locked</button>` :
+                  (acc.status === 'idling' ?
+                    `<button class="btn btn-danger btn-sm" onclick="stopIdling(${acc.id})">Stop</button>` :
+                    `<button class="btn btn-success btn-sm" onclick="startIdling(${acc.id})">Start</button>`))}
+              ${!acc.incomplete ? `<button class="btn btn-secondary btn-sm" onclick="editAccount(${acc.id})">Edit</button>` : ''}
+              ${acc.steam_id ? `<button class="btn btn-ghost btn-sm" onclick="refreshAccount(${acc.id})" title="Refresh Steam data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              </button>` : ''}
               <button class="btn btn-ghost btn-sm" onclick="deleteAccount(${acc.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
@@ -258,12 +427,19 @@
       }).join('');
     }
 
-    function getStatusBadge(status) {
+    function getStatusBadge(status, lockoutUntil) {
+      // Check if account is locked out
+      if (lockoutUntil && new Date(lockoutUntil) > new Date()) {
+        const remaining = Math.ceil((new Date(lockoutUntil) - new Date()) / 60000);
+        return `<span class="badge badge-error" title="Locked for ${remaining} minutes"><span class="badge-dot"></span>Locked</span>`;
+      }
+
       const badges = {
         'idling': '<span class="badge badge-info"><span class="badge-dot"></span>Idling</span>',
         'online': '<span class="badge badge-success"><span class="badge-dot"></span>Online</span>',
         'connecting': '<span class="badge badge-warning"><span class="badge-dot"></span>Connecting</span>',
         'error': '<span class="badge badge-error"><span class="badge-dot"></span>Error</span>',
+        'locked': '<span class="badge badge-error"><span class="badge-dot"></span>Locked</span>',
         'offline': '<span class="badge badge-muted"><span class="badge-dot"></span>Offline</span>'
       };
       return badges[status] || badges['offline'];
@@ -273,11 +449,12 @@
       event.preventDefault();
       const form = event.target;
       try {
+        const gamesInput = document.getElementById('add-games-input').value;
         const data = {
           username: form.username.value,
           password: form.password.value,
           mafile_id: form.mafile.value || null,
-          games: form.games.value.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
+          games: gamesInput.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
           persona_state: parseInt(form.persona.value)
         };
         await API.post('/api/accounts', data);
@@ -288,7 +465,8 @@
         }
         closeModal('add-account-modal');
         form.reset();
-        form.games.value = '730';
+        // Reset game picker to just CS2
+        setGamePickerSelection('add', [730]);
         loadData();
         showToast('Account added successfully', 'success');
       } catch (err) {
@@ -302,11 +480,30 @@
         document.getElementById('edit-id').value = acc.id;
         document.getElementById('edit-username').value = acc.username;
         document.getElementById('edit-password').value = '';
-        document.getElementById('edit-games').value = (acc.games || []).map(g => g.app_id || g).join(', ');
         document.getElementById('edit-persona').value = acc.persona_state || 1;
+
+        // Set game picker selection
+        const gameIds = (acc.games || []).map(g => g.app_id || g);
+        setGamePickerSelection('edit', gameIds);
 
         const linked = mafiles.find(m => m.linked_account_id === acc.id);
         document.getElementById('edit-mafile-select').value = linked ? linked.id : '';
+
+        // Update password field label for incomplete accounts
+        const passwordLabel = document.getElementById('edit-password-label');
+        const passwordHint = document.getElementById('edit-password-hint');
+        const passwordInput = document.getElementById('edit-password');
+        if (acc.incomplete) {
+          passwordLabel.innerHTML = 'Steam Password <span class="badge badge-warning" style="font-size:0.65rem;margin-left:8px;">Required</span>';
+          passwordHint.textContent = 'Password is required to start idling.';
+          passwordInput.placeholder = 'Enter your Steam password';
+          passwordInput.required = true;
+        } else {
+          passwordLabel.textContent = 'Steam Password';
+          passwordHint.textContent = 'Leave empty to keep current password.';
+          passwordInput.placeholder = 'Leave empty to keep current';
+          passwordInput.required = false;
+        }
 
         openModal('edit-account-modal');
       } catch (err) {
@@ -319,9 +516,10 @@
       const form = event.target;
       const id = form.id.value;
       try {
+        const gamesInput = document.getElementById('edit-games-input').value;
         const data = {
           username: form.username.value,
-          games: form.games.value.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
+          games: gamesInput.split(',').map(g => parseInt(g.trim())).filter(g => g > 0),
           persona_state: parseInt(form.persona.value)
         };
         if (form.password.value) data.password = form.password.value;
@@ -364,6 +562,53 @@
         await API.post(`/api/accounts/${id}/stop`);
         loadData();
         showToast('Stopped idling', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Search and filter functionality
+    let searchTimeout = null;
+    let allAccounts = [];
+
+    function debounceSearch() {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(applyFilters, 300);
+    }
+
+    async function applyFilters() {
+      const q = document.getElementById('search-input').value;
+      const status = document.getElementById('status-filter').value;
+      const hasGuard = document.getElementById('guard-filter').value;
+
+      try {
+        const params = new URLSearchParams();
+        if (q) params.append('q', q);
+        if (status) params.append('status', status);
+        if (hasGuard) params.append('hasGuard', hasGuard);
+
+        const url = params.toString() ? `/api/accounts/search?${params}` : '/api/accounts';
+        const accounts = await API.get(url);
+        allAccounts = accounts;
+        renderAccounts(accounts);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function clearFilters() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('status-filter').value = '';
+      document.getElementById('guard-filter').value = '';
+      loadData();
+    }
+
+    async function refreshAccount(id) {
+      try {
+        showToast('Refreshing Steam data...', 'info');
+        const result = await API.post(`/api/accounts/${id}/refresh`);
+        loadData();
+        showToast('Account data refreshed', 'success');
       } catch (err) {
         showToast(err.message, 'error');
       }
