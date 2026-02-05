@@ -13,7 +13,7 @@
 
 Companion app for [steam-authenticator-linux](https://github.com/cs2central/steam-authenticator-linux). Run 24/7 on your homeserver to idle Steam games and accumulate playtime.
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](#usage) • [Discord](https://discord.gg/cs2central)
+[Features](#features) • [Installation](#installation) • [Documentation](#usage) • [Discord](https://discord.gg/cs2central)
 
 </div>
 
@@ -55,26 +55,121 @@ Companion app for [steam-authenticator-linux](https://github.com/cs2central/stea
 
 ---
 
-## Quick Start
+## Installation
 
-### Docker (Recommended)
+### Option 1: Docker (Recommended)
 
+Docker is the easiest way to run Steam Hour Boost. It works on any Linux system and handles all dependencies automatically.
+
+**Step 1: Install Docker** (skip if already installed)
 ```bash
-# Clone the repository
-git clone https://github.com/cs2central/steam-hour-boost.git
-cd steam-hour-boost
+# Install Docker
+curl -fsSL https://get.docker.com | sh
 
-# Start with Docker Compose
-docker-compose up -d
-
-# Open in browser
-open http://localhost:8869
+# Add your user to the docker group (log out and back in after this)
+sudo usermod -aG docker $USER
 ```
 
-### Manual Installation
+**Step 2: Download and run**
+```bash
+# Create a directory for the app
+mkdir steam-hour-boost && cd steam-hour-boost
+
+# Download docker-compose.yml
+curl -O https://raw.githubusercontent.com/cs2central/steam-hour-boost/main/docker-compose.yml
+
+# Start the container
+docker compose up -d
+```
+
+**Step 3: Open in your browser**
+```
+http://localhost:8869
+```
+
+> **Tip:** To view logs: `docker compose logs -f`
+> **Tip:** To stop: `docker compose down`
+> **Tip:** To update: `docker compose pull && docker compose up -d`
+
+---
+
+### Option 2: Debian/Ubuntu Package (.deb)
+
+For Debian, Ubuntu, Linux Mint, Pop!_OS, and other Debian-based distros.
+
+**Step 1: Download the .deb package**
+```bash
+# For 64-bit systems (most common)
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_1.1.0_amd64.deb
+
+# For ARM64 systems (Raspberry Pi 4/5, Oracle Cloud, etc.)
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_1.1.0_arm64.deb
+```
+
+**Step 2: Install the package**
+```bash
+sudo dpkg -i steam-hour-boost_*.deb
+```
+
+**Step 3: Start the service**
+```bash
+# Start the service
+sudo systemctl start steam-hour-boost
+
+# Enable auto-start on boot (optional but recommended)
+sudo systemctl enable steam-hour-boost
+```
+
+**Step 4: Open in your browser**
+```
+http://localhost:8869
+```
+
+> **Tip:** View logs: `sudo journalctl -u steam-hour-boost -f`
+> **Tip:** Stop service: `sudo systemctl stop steam-hour-boost`
+> **Tip:** Check status: `sudo systemctl status steam-hour-boost`
+
+---
+
+### Option 3: Standalone Binary
+
+Download a single executable file. No installation required.
+
+**Step 1: Download and extract**
+```bash
+# For 64-bit systems
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-1.1.0-linux-x64.tar.gz
+tar -xzf steam-hour-boost-1.1.0-linux-x64.tar.gz
+cd steam-hour-boost
+
+# For ARM64 systems
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-1.1.0-linux-arm64.tar.gz
+tar -xzf steam-hour-boost-1.1.0-linux-arm64.tar.gz
+cd steam-hour-boost
+```
+
+**Step 2: Run it**
+```bash
+./steam-hour-boost
+```
+
+**Step 3: Open in your browser**
+```
+http://localhost:8869
+```
+
+> **Tip:** For permanent installation with systemd: `sudo ./install.sh`
+
+---
+
+### Option 4: From Source
+
+For developers or if you want to modify the code.
 
 ```bash
-# Prerequisites: Node.js 18+
+# Prerequisites: Node.js 18+ (https://nodejs.org)
+git clone https://github.com/cs2central/steam-hour-boost.git
+cd steam-hour-boost
 npm install
 npm start
 ```
