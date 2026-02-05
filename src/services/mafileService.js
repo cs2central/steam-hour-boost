@@ -109,8 +109,33 @@ class MAFileService {
       // Check if account already exists with this username
       const existing = db.accounts.findByUsername(parsed.account_name);
       if (existing) {
-        logger.info(`Account ${parsed.account_name} already exists, linking MAFile`);
+        logger.info(`Account ${parsed.account_name} already exists, linking MAFile and updating data`);
         db.mafiles.linkToAccount(mafileId, existing.id);
+
+        // Update account with MAFile data (steam_id, secrets) if not already set
+        const updateData = {};
+        if (parsed.steam_id && !existing.steam_id) {
+          updateData.steam_id = parsed.steam_id;
+        }
+        if (parsed.shared_secret) {
+          updateData.shared_secret = parsed.shared_secret;
+        }
+        if (parsed.identity_secret) {
+          updateData.identity_secret = parsed.identity_secret;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          // Encrypt if needed
+          const encryptedData = encryptAccountCredentials(updateData);
+          db.accounts.update(existing.id, encryptedData);
+          logger.info(`Updated account ${parsed.account_name} with MAFile data`);
+
+          // Trigger Steam API refresh if we now have steam_id
+          if (parsed.steam_id) {
+            this.refreshAccountData(existing.id, parsed.steam_id);
+          }
+        }
+
         return existing;
       }
 
