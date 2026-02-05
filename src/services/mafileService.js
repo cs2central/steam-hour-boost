@@ -25,14 +25,17 @@ class MAFileService {
       // Extract SteamID from raw content before JSON.parse to avoid precision loss
       // SteamIDs are 64-bit integers that JavaScript can't handle accurately
       let steamId = null;
-      const steamIdMatch = content.match(/"SteamID"\s*:\s*(\d+)/);
-      if (steamIdMatch) {
-        steamId = steamIdMatch[1]; // Keep as string
-      } else {
-        // Try alternative field name
-        const altMatch = content.match(/"steam_id"\s*:\s*"?(\d+)"?/);
-        if (altMatch) {
-          steamId = altMatch[1];
+      // Try various field names used by different MAFile formats
+      const patterns = [
+        /"SteamID"\s*:\s*(\d+)/,           // SteamDesktopAuthenticator format
+        /"steamid"\s*:\s*"?(\d+)"?/i,      // steam-authenticator-linux format (lowercase)
+        /"steam_id"\s*:\s*"?(\d+)"?/       // Alternative format
+      ];
+      for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match) {
+          steamId = match[1];
+          break;
         }
       }
 
