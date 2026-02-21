@@ -1,29 +1,19 @@
-FROM node:20-alpine
-
+FROM node:18-alpine
 WORKDIR /app
+RUN apk add --no-cache tini
 
-# Copy package files first for better caching
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci --only=production
 
-# Copy application code
-COPY . .
+COPY src ./src
+COPY views ./views
+COPY public ./public
 
-# Create directories for persistent data
-RUN mkdir -p /app/data /app/mafiles
-
-# Set permissions
-RUN chown -R node:node /app
-
+RUN mkdir -p /data && chown -R node:node /data /app
 USER node
 
-# Expose the web UI port
+ENV NODE_ENV=production PORT=8869 DATA_DIR=/data
 EXPOSE 8869
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8869/health || exit 1
-
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "src/index.js"]

@@ -15,6 +15,7 @@ const { rateLimiters } = require('../middleware/rateLimiter');
 const db = require('../models/database');
 const logger = require('../services/logger');
 const steamApiService = require('../services/steamApiService');
+const steamService = require('../services/steamService');
 
 // Setup - Create initial admin account
 router.post('/api/setup', rateLimiters.setup, async (req, res) => {
@@ -116,6 +117,11 @@ router.post('/api/login', rateLimiters.login, async (req, res) => {
       if (refreshInterval && refreshInterval > 0) {
         steamApiService.startPeriodicRefresh(refreshInterval);
       }
+
+      // Resume idling now that encryption key is available
+      steamService.resumeIdling().catch(err => {
+        logger.error(`Failed to resume idling after login: ${err.message}`);
+      });
     } catch (encErr) {
       // Log error but allow login to proceed
       logger.error(`Encryption initialization failed: ${encErr.message}`, null, 'ENCRYPTION');

@@ -1,11 +1,15 @@
 {
-  "name": "hour-boost",
-  "version": "1.1.0-beta",
+  "name": "steam-hour-boost",
+  "version": "1.1.0",
   "description": "Steam hour booster with web UI - companion to steam-authenticator-linux",
   "main": "src/index.js",
+  "bin": {
+    "steam-hour-boost": "./src/index.js"
+  },
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "build": "node scripts/build-all.js"
   },
   "keywords": [
     "steam",
@@ -26,7 +30,26 @@
     "steam-user": "^5.0.9"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "nodemon": "^3.0.3",
+    "@yao-pkg/pkg": "^5.11.0",
+    "archiver": "^6.0.1"
+  },
+  "pkg": {
+    "scripts": [
+      "src/**/*.js",
+      "node_modules/lzma/**/*.js"
+    ],
+    "assets": [
+      "views/**/*",
+      "public/**/*",
+      "node_modules/sql.js/dist/sql-wasm.wasm",
+      "node_modules/@doctormckay/steam-crypto/*.pem"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-linux-arm64"
+    ],
+    "outputPath": "dist"
   },
   "engines": {
     "node": ">=18.0.0"

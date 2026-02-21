@@ -536,6 +536,11 @@ class SteamService {
     const idlingAccounts = accountManager.getIdlingAccounts();
     logger.info(`Resuming idling for ${idlingAccounts.length} accounts`);
 
+    if (idlingAccounts.length > 0 && !require('../middleware/auth').getEncryptionKey()) {
+      logger.info('Encryption key not available yet, deferring resume until login');
+      return;
+    }
+
     for (const account of idlingAccounts) {
       try {
         await this.startIdling(account.id);

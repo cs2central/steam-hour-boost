@@ -32,6 +32,11 @@ Thumbs.db
 # Build
 dist/
 build/
+*.AppImage
+*.deb
+*.rpm
+*.tar.gz
+rpmbuild/
 
 # Other projects (don't upload)
 steam-authenticator-linux/
