@@ -9,7 +9,7 @@ class SteamSession {
   constructor(accountId, accountData) {
     this.accountId = accountId;
     this.accountData = accountData;
-    this.client = new SteamUser();
+    this.client = new SteamUser({ autoRelogin: false });
     this.isLoggedIn = false;
     this.isIdling = false;
     this.currentGames = [];
