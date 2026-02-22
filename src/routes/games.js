@@ -2,6 +2,23 @@ const express = require('express');
 const router = express.Router();
 const accountManager = require('../services/accountManager');
 
+// Validate route parameters
+router.param('id', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid account ID' });
+  }
+  next();
+});
+
+router.param('appId', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid app ID' });
+  }
+  next();
+});
+
 // Get games for an account
 router.get('/api/accounts/:id/games', (req, res) => {
   try {
@@ -27,7 +44,12 @@ router.post('/api/accounts/:id/games', (req, res) => {
       return res.status(400).json({ error: 'app_id is required' });
     }
 
-    accountManager.addGame(id, parseInt(app_id), app_name);
+    const appId = parseInt(app_id, 10);
+    if (isNaN(appId) || appId < 1) {
+      return res.status(400).json({ error: 'Invalid app_id: must be a positive number' });
+    }
+
+    accountManager.addGame(id, appId, app_name);
     res.status(201).json({ success: true });
   } catch (err) {
     res.status(400).json({ error: err.message });

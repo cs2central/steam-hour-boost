@@ -40,7 +40,7 @@ class SteamSession {
       accountManager.updateStatus(this.accountId, 'online');
 
       // Set persona state based on account settings
-      const personaState = this.accountData.persona_state || 1;
+      const personaState = this.accountData.persona_state ?? 1;
       this.client.setPersona(personaState);
       const stateNames = { 1: 'Online', 3: 'Away', 7: 'Invisible' };
       logger.info(`Set persona state: ${stateNames[personaState] || personaState}`, this.accountId);
@@ -480,18 +480,15 @@ class SteamService {
    */
   async startAll() {
     const accounts = accountManager.getAll();
-    const results = [];
+    const results = await Promise.allSettled(
+      accounts.map(account => this.startIdling(account.id))
+    );
 
-    for (const account of accounts) {
-      try {
-        await this.startIdling(account.id);
-        results.push({ id: account.id, success: true });
-      } catch (err) {
-        results.push({ id: account.id, success: false, error: err.message });
-      }
-    }
-
-    return results;
+    return results.map((result, i) => ({
+      id: accounts[i].id,
+      success: result.status === 'fulfilled',
+      error: result.status === 'rejected' ? result.reason.message : undefined
+    }));
   }
 
   /**
@@ -541,12 +538,18 @@ class SteamService {
       return;
     }
 
-    for (const account of idlingAccounts) {
-      try {
-        await this.startIdling(account.id);
-        logger.info(`Resumed idling for ${account.username}`, account.id);
-      } catch (err) {
-        logger.error(`Failed to resume idling for ${account.username}: ${err.message}`, account.id);
+    const results = await Promise.allSettled(
+      idlingAccounts.map(account =>
+        this.startIdling(account.id).then(() => {
+          logger.info(`Resumed idling for ${account.username}`, account.id);
+        })
+      )
+    );
+
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].status === 'rejected') {
+        const account = idlingAccounts[i];
+        logger.error(`Failed to resume idling for ${account.username}: ${results[i].reason.message}`, account.id);
       }
     }
   }

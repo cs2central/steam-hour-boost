@@ -18,6 +18,23 @@ const upload = multer({
   }
 });
 
+// Validate route parameters
+router.param('id', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid MAFile ID' });
+  }
+  next();
+});
+
+router.param('accountId', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid account ID' });
+  }
+  next();
+});
+
 // Get all MAFiles
 router.get('/api/mafiles', (req, res) => {
   try {
@@ -44,12 +61,20 @@ router.get('/api/mafiles/:id', (req, res) => {
 // Import MAFiles from folder
 router.post('/api/mafiles/import/folder', (req, res) => {
   try {
-    const { path } = req.body;
-    if (!path) {
+    const { path: folderPath } = req.body;
+    if (!folderPath) {
       return res.status(400).json({ error: 'Folder path required' });
     }
 
-    const result = mafileService.importFromFolder(path);
+    // Normalize and validate path to prevent traversal attacks
+    const nodePath = require('path');
+    const resolvedPath = nodePath.resolve(folderPath);
+    if (!nodePath.isAbsolute(resolvedPath)) {
+      return res.status(400).json({ error: 'Path must be absolute' });
+    }
+
+    const { passkey } = req.body;
+    const result = mafileService.importFromFolder(resolvedPath, passkey || null);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -76,17 +101,28 @@ router.post('/api/mafiles/import/content', contentUpload.none(), (req, res) => {
   }
 });
 
-// Import MAFiles from ZIP upload
+// Import MAFiles from ZIP upload (supports SDA encrypted archives with passkey field)
 router.post('/api/mafiles/import/zip', upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'ZIP file required' });
     }
 
-    const result = mafileService.importFromZip(req.file.buffer);
+    const passkey = req.body?.passkey || null;
+    const result = mafileService.importFromZip(req.file.buffer, passkey);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// Sync from steam-authenticator-linux shared data directory
+router.post('/api/mafiles/sync', (req, res) => {
+  try {
+    const result = mafileService.syncFromAuthenticator();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

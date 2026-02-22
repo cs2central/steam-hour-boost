@@ -1,13 +1,14 @@
-version: '3.8'
-
 services:
   steam-hour-boost:
     build: .
-    image: cs2central/steam-hour-boost:1.1.0
+    image: cs2central/steam-hour-boost:latest
     container_name: steam-hour-boost
     restart: unless-stopped
     ports:
       - "8869:8869"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
     volumes:
       - steam-hour-boost-data:/data
 

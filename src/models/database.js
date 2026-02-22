@@ -21,19 +21,19 @@ function runMigrations() {
 
       // Add persona_state column
       if (!columns.includes('persona_state')) {
-        // Migration: Running migration: Adding persona_state column');
+        // Migration: Adding persona_state column
         db.run('ALTER TABLE accounts ADD COLUMN persona_state INTEGER DEFAULT 1');
       }
 
       // Add encrypted flag column
       if (!columns.includes('encrypted')) {
-        // Migration: Running migration: Adding encrypted column');
+        // Migration: Adding encrypted column
         db.run('ALTER TABLE accounts ADD COLUMN encrypted INTEGER DEFAULT 0');
       }
 
       // Add lockout columns for account protection
       if (!columns.includes('failed_logins')) {
-        // Migration: Running migration: Adding lockout columns');
+        // Migration: Adding lockout columns
         db.run('ALTER TABLE accounts ADD COLUMN failed_logins INTEGER DEFAULT 0');
         db.run('ALTER TABLE accounts ADD COLUMN last_failed_login DATETIME');
         db.run('ALTER TABLE accounts ADD COLUMN lockout_until DATETIME');
@@ -41,7 +41,7 @@ function runMigrations() {
 
       // Add Steam API data columns
       if (!columns.includes('profile_visibility')) {
-        // Migration: Running migration: Adding Steam API columns');
+        // Migration: Adding Steam API columns
         db.run('ALTER TABLE accounts ADD COLUMN profile_visibility INTEGER');
         db.run('ALTER TABLE accounts ADD COLUMN vac_banned INTEGER DEFAULT 0');
         db.run('ALTER TABLE accounts ADD COLUMN trade_banned INTEGER DEFAULT 0');
@@ -49,6 +49,12 @@ function runMigrations() {
         db.run('ALTER TABLE accounts ADD COLUMN account_created DATETIME');
         db.run('ALTER TABLE accounts ADD COLUMN total_games INTEGER');
         db.run('ALTER TABLE accounts ADD COLUMN api_last_refresh DATETIME');
+      }
+
+      // Add device_id and revocation_code columns for SDA compatibility
+      if (!columns.includes('device_id')) {
+        db.run('ALTER TABLE accounts ADD COLUMN device_id TEXT');
+        db.run('ALTER TABLE accounts ADD COLUMN revocation_code TEXT');
       }
     }
 
@@ -59,13 +65,13 @@ function runMigrations() {
 
       // Add category column
       if (!logColumns.includes('category')) {
-        // Migration: Running migration: Adding category column to logs');
+        // Migration: Adding category column to logs
         db.run("ALTER TABLE logs ADD COLUMN category TEXT DEFAULT 'SYSTEM'");
         db.run('CREATE INDEX IF NOT EXISTS idx_logs_category ON logs(category)');
       }
     }
   } catch (err) {
-    // Migration error (logged silently to avoid circular dependency with logger)
+    console.error('Migration error:', err.message);
   }
 }
 
@@ -209,7 +215,7 @@ async function initializeDatabase() {
   // Save database
   saveDatabase();
 
-  // Migration: Database initialized');
+  // Database initialized
 }
 
 // Save database to disk
@@ -221,34 +227,42 @@ function saveDatabase() {
 }
 
 // Auto-save every 30 seconds
-setInterval(() => {
+const autoSaveInterval = setInterval(() => {
   if (db) saveDatabase();
 }, 30000);
+autoSaveInterval.unref();
 
 // Helper to get one row
 function get(sql, params = []) {
   const stmt = db.prepare(sql);
-  stmt.bind(params);
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
+  try {
+    stmt.bind(params);
+    if (stmt.step()) {
+      return stmt.getAsObject();
+    }
+    return null;
+  } finally {
     stmt.free();
-    return row;
   }
-  stmt.free();
-  return null;
 }
 
 // Helper to get all rows
 function all(sql, params = []) {
   const results = [];
   const stmt = db.prepare(sql);
-  stmt.bind(params);
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
+  try {
+    stmt.bind(params);
+    while (stmt.step()) {
+      results.push(stmt.getAsObject());
+    }
+    return results;
+  } finally {
+    stmt.free();
   }
-  stmt.free();
-  return results;
 }
+
+// Batch mode flag: when true, run() skips saveDatabase() after each statement
+let batchMode = false;
 
 // Helper to run a statement
 function run(sql, params = []) {
@@ -266,9 +280,22 @@ function run(sql, params = []) {
   }
 
   const changes = db.getRowsModified();
-  saveDatabase();
+  if (!batchMode) {
+    saveDatabase();
+  }
 
   return { lastInsertRowid, changes };
+}
+
+// Execute multiple statements as a single batch, saving to disk only once at the end
+function batch(fn) {
+  batchMode = true;
+  try {
+    fn();
+  } finally {
+    batchMode = false;
+    saveDatabase();
+  }
 }
 
 // User methods
@@ -299,8 +326,8 @@ const userMethods = {
 const accountMethods = {
   create(data) {
     return run(`
-      INSERT INTO accounts (username, password, shared_secret, identity_secret, steam_id, display_name, persona_state)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO accounts (username, password, shared_secret, identity_secret, steam_id, display_name, persona_state, device_id, revocation_code)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       data.username,
       data.password || '', // Empty string for incomplete accounts (password required)
@@ -308,13 +335,10 @@ const accountMethods = {
       data.identity_secret || null,
       data.steam_id || null,
       data.display_name || null,
-      data.persona_state || 1
+      data.persona_state ?? 1,
+      data.device_id || null,
+      data.revocation_code || null
     ]);
-  },
-
-  // Check if account is incomplete (missing password)
-  isIncomplete(account) {
-    return !account.password || account.password === '';
   },
 
   findById(id) {
@@ -330,11 +354,19 @@ const accountMethods = {
   },
 
   update(id, data) {
+    const ALLOWED_COLUMNS = [
+      'username', 'password', 'shared_secret', 'identity_secret',
+      'steam_id', 'display_name', 'avatar_url', 'status', 'last_error',
+      'is_idling', 'persona_state', 'encrypted', 'failed_logins',
+      'last_failed_login', 'lockout_until', 'profile_visibility',
+      'vac_banned', 'trade_banned', 'game_bans', 'account_created',
+      'total_games', 'api_last_refresh', 'device_id', 'revocation_code'
+    ];
     const fields = [];
     const values = [];
 
     for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
+      if (value !== undefined && ALLOWED_COLUMNS.includes(key)) {
         fields.push(`${key} = ?`);
         values.push(value);
       }
@@ -422,8 +454,9 @@ const accountMethods = {
     const params = [];
 
     if (query.q) {
-      sql += ' AND (username LIKE ? OR display_name LIKE ? OR steam_id LIKE ?)';
-      const searchTerm = `%${query.q}%`;
+      sql += " AND (username LIKE ? ESCAPE '\\' OR display_name LIKE ? ESCAPE '\\' OR steam_id LIKE ? ESCAPE '\\')";
+      const escapedQ = query.q.replace(/[%_\\]/g, '\\$&');
+      const searchTerm = `%${escapedQ}%`;
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
@@ -474,13 +507,24 @@ const gameMethods = {
   },
 
   setGames(accountId, games) {
-    run('DELETE FROM account_games WHERE account_id = ?', [accountId]);
+    db.run('DELETE FROM account_games WHERE account_id = ?', [accountId]);
     for (const game of games) {
       const appId = game.app_id || game;
       const appName = game.app_name || null;
-      run('INSERT INTO account_games (account_id, app_id, app_name) VALUES (?, ?, ?)',
+      db.run('INSERT INTO account_games (account_id, app_id, app_name) VALUES (?, ?, ?)',
         [accountId, appId, appName]);
     }
+    saveDatabase();
+  },
+
+  getAllGrouped() {
+    const rows = all('SELECT * FROM account_games ORDER BY account_id');
+    const grouped = {};
+    for (const row of rows) {
+      if (!grouped[row.account_id]) grouped[row.account_id] = [];
+      grouped[row.account_id].push(row);
+    }
+    return grouped;
   }
 };
 
@@ -519,6 +563,22 @@ const mafileMethods = {
 
   linkToAccount(mafileId, accountId) {
     return run('UPDATE mafiles SET linked_account_id = ? WHERE id = ?', [accountId, mafileId]);
+  },
+
+  updateSecrets(id, data) {
+    const fields = [];
+    const values = [];
+    if (data.shared_secret !== undefined) {
+      fields.push('shared_secret = ?');
+      values.push(data.shared_secret);
+    }
+    if (data.identity_secret !== undefined) {
+      fields.push('identity_secret = ?');
+      values.push(data.identity_secret);
+    }
+    if (fields.length === 0) return;
+    values.push(id);
+    return run(`UPDATE mafiles SET ${fields.join(', ')} WHERE id = ?`, values);
   },
 
   delete(id) {
@@ -626,7 +686,12 @@ const logMethods = {
 const settingsMethods = {
   get(key, defaultValue = null) {
     const row = get('SELECT value FROM settings WHERE key = ?', [key]);
-    return row ? JSON.parse(row.value) : defaultValue;
+    if (!row) return defaultValue;
+    try {
+      return JSON.parse(row.value);
+    } catch {
+      return defaultValue;
+    }
   },
 
   set(key, value) {
@@ -638,7 +703,11 @@ const settingsMethods = {
     const rows = all('SELECT * FROM settings');
     const settings = {};
     for (const row of rows) {
-      settings[row.key] = JSON.parse(row.value);
+      try {
+        settings[row.key] = JSON.parse(row.value);
+      } catch {
+        settings[row.key] = row.value;
+      }
     }
     return settings;
   }
@@ -647,6 +716,7 @@ const settingsMethods = {
 module.exports = {
   initializeDatabase,
   saveDatabase,
+  batch,
   users: userMethods,
   accounts: accountMethods,
   games: gameMethods,

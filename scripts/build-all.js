@@ -8,6 +8,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist');
@@ -62,11 +63,13 @@ async function buildBinaries() {
     // pkg outputs as steam-hour-boost-{arch} not steam-hour-boost-linux-{arch}
     const from = path.join(DIST_DIR, `${APP_NAME}-${arch}`);
     const to = path.join(DIST_DIR, `${APP_NAME}-${VERSION}-linux-${arch}`);
-    if (fs.existsSync(from)) {
-      fs.renameSync(from, to);
-      fs.chmodSync(to, 0o755);
-      log(`Created: ${APP_NAME}-${VERSION}-linux-${arch}`, 'green');
+    if (!fs.existsSync(from)) {
+      console.error(`ERROR: Binary not created at ${from}`);
+      process.exit(1);
     }
+    fs.renameSync(from, to);
+    fs.chmodSync(to, 0o755);
+    log(`Created: ${APP_NAME}-${VERSION}-linux-${arch}`, 'green');
   }
 }
 
@@ -187,7 +190,7 @@ async function buildRpm() {
 
     try {
       exec(`rpmbuild --define "_topdir ${rpmDir}" --target ${rpmArch} -bb ${rpmDir}/SPECS/${APP_NAME}.spec`);
-      const rpms = fs.readdirSync(path.join(rpmDir, 'RPMS', rpmArch) || []);
+      const rpms = fs.readdirSync(path.join(rpmDir, 'RPMS', rpmArch));
       for (const rpm of rpms.filter(f => f.endsWith('.rpm'))) {
         fs.renameSync(path.join(rpmDir, 'RPMS', rpmArch, rpm), path.join(DIST_DIR, rpm));
         log(`Created: ${rpm}`, 'green');
@@ -202,7 +205,10 @@ async function buildRpm() {
 function createDockerFiles() {
   logStep('Creating Docker files');
 
-  fs.writeFileSync(path.join(ROOT_DIR, 'Dockerfile'), `FROM node:18-alpine
+  const dockerDir = path.join(DIST_DIR, 'docker');
+  ensureDir(dockerDir);
+
+  fs.writeFileSync(path.join(dockerDir, 'Dockerfile'), `FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache tini
 
@@ -219,20 +225,23 @@ USER node
 ENV NODE_ENV=production PORT=8869 DATA_DIR=/data
 EXPOSE 8869
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:8869/health || exit 1
+
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "src/index.js"]
 `);
 
-  fs.writeFileSync(path.join(ROOT_DIR, 'docker-compose.yml'), `version: '3.8'
-
-services:
+  fs.writeFileSync(path.join(dockerDir, 'docker-compose.yml'), `services:
   steam-hour-boost:
     build: .
-    image: cs2central/steam-hour-boost:${VERSION}
+    image: cs2central/steam-hour-boost:latest
     container_name: steam-hour-boost
     restart: unless-stopped
     ports:
       - "8869:8869"
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
     volumes:
       - steam-hour-boost-data:/data
 
@@ -240,8 +249,8 @@ volumes:
   steam-hour-boost-data:
 `);
 
-  log('Created: Dockerfile', 'green');
-  log('Created: docker-compose.yml', 'green');
+  log('Created: dist/docker/Dockerfile', 'green');
+  log('Created: dist/docker/docker-compose.yml', 'green');
 }
 
 function createChecksums() {
@@ -252,7 +261,9 @@ function createChecksums() {
 
   let sums = '';
   for (const file of files) {
-    const sha = execSync(`sha256sum "${path.join(DIST_DIR, file)}"`, { encoding: 'utf8' }).split(' ')[0];
+    const filePath = path.join(DIST_DIR, file);
+    const fileBuffer = fs.readFileSync(filePath);
+    const sha = crypto.createHash('sha256').update(fileBuffer).digest('hex');
     sums += `${sha}  ${file}\n`;
   }
   fs.writeFileSync(path.join(DIST_DIR, 'SHA256SUMS'), sums);
@@ -284,6 +295,9 @@ Restart=on-failure
 WorkingDirectory=/var/lib/steam-hour-boost
 Environment=NODE_ENV=production
 Environment=DATA_DIR=/var/lib/steam-hour-boost
+# Change User and Group to match the account that should run the service
+User=steam-hour-boost
+Group=steam-hour-boost
 
 [Install]
 WantedBy=multi-user.target
@@ -302,6 +316,9 @@ Restart=on-failure
 WorkingDirectory=/var/lib/steam-hour-boost
 Environment=NODE_ENV=production
 Environment=DATA_DIR=/var/lib/steam-hour-boost
+# Change User and Group to match the account that should run the service
+User=steam-hour-boost
+Group=steam-hour-boost
 
 [Install]
 WantedBy=multi-user.target

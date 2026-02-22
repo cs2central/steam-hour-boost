@@ -100,10 +100,10 @@ For Debian, Ubuntu, Linux Mint, Pop!_OS, and other Debian-based distros.
 **Step 1: Download the .deb package**
 ```bash
 # For 64-bit systems (most common)
-wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_1.1.0_amd64.deb
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_latest_amd64.deb
 
 # For ARM64 systems (Raspberry Pi 4/5, Oracle Cloud, etc.)
-wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_1.1.0_arm64.deb
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost_latest_arm64.deb
 ```
 
 **Step 2: Install the package**
@@ -138,13 +138,13 @@ Download a single executable file. No installation required.
 **Step 1: Download and extract**
 ```bash
 # For 64-bit systems
-wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-1.1.0-linux-x64.tar.gz
-tar -xzf steam-hour-boost-1.1.0-linux-x64.tar.gz
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-linux-x64.tar.gz
+tar -xzf steam-hour-boost-linux-x64.tar.gz
 cd steam-hour-boost
 
 # For ARM64 systems
-wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-1.1.0-linux-arm64.tar.gz
-tar -xzf steam-hour-boost-1.1.0-linux-arm64.tar.gz
+wget https://github.com/cs2central/steam-hour-boost/releases/latest/download/steam-hour-boost-linux-arm64.tar.gz
+tar -xzf steam-hour-boost-linux-arm64.tar.gz
 cd steam-hour-boost
 ```
 

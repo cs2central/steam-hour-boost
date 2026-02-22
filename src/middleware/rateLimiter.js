@@ -48,6 +48,19 @@ function createRateLimiter(options) {
       buckets.set(key, bucket);
     }
 
+    // Check if explicitly blocked
+    if (bucket.blockedUntil && now < bucket.blockedUntil) {
+      const retryAfter = Math.ceil((bucket.blockedUntil - now) / 1000);
+      res.set('Retry-After', retryAfter);
+      return res.status(429).json({
+        success: false,
+        error: message,
+        retryAfter
+      });
+    } else if (bucket.blockedUntil && now >= bucket.blockedUntil) {
+      delete bucket.blockedUntil;
+    }
+
     // Refill tokens based on time elapsed
     const timePassed = now - bucket.lastRefill;
     const tokensToAdd = Math.floor(timePassed / windowMs) * maxAttempts;

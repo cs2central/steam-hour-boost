@@ -63,3 +63,11 @@ coverage/
 # Sensitive exports
 *-backup-*.json
 hour-boost-backup-*.json
+maFiles-*.zip
+
+# TODO / scratch
+todo.md
+
+# Test artifacts
+/tmp/
+*.test.zip

@@ -1,47 +1,22 @@
-# GitHub Setup
+# Release Checklist
 
-## Repository
+For repository setup and release body template, see GITHUB.md.
 
-**Name:** `steam-hour-boost`
+## Steps to Publish a Release
 
-**Description:** Steam hour booster with a modern web UI. Idle games, accumulate playtime, and manage multiple accounts with automatic Steam Guard 2FA.
-
----
-
-## First Release
-
-**Tag:** `v0.1.0-beta`
-
-**Title:** Steam Hour Boost v0.1.0-beta
-
-**Description:**
-
-```
-First public beta release of Steam Hour Boost.
-
-## Features
-- Multi-account support with unlimited Steam accounts
-- Modern dark-themed web dashboard
-- MAFile import (folder picker or ZIP upload)
-- Automatic Steam Guard 2FA using shared_secret
-- Idle up to 32 games per account
-- Configurable persona status (Online, Away, Invisible)
-- Auto-reconnect on disconnection
-- Docker ready with one-command deployment
-- Persistent state across restarts
+1. Bump the version in `package.json`
+2. Update `CHANGELOG` / commit history as needed
+3. Tag the commit: `git tag vX.Y.Z`
+4. Push the tag: `git push origin vX.Y.Z`
+5. Create the GitHub release using the template in GITHUB.md
+6. Attach any build artifacts (packaged binaries, Docker image tags)
 
 ## Requirements
+
 - Node.js 18+ or Docker
 - Steam accounts with MAFiles for 2FA
 
 ## Notes
-- This is a beta release - please report issues on GitHub
+
 - Steam credentials are stored locally in SQLite
 - For production, use HTTPS via reverse proxy
-```
-
----
-
-## Short Description (for social/Discord)
-
-> Idle Steam games 24/7 with a clean web UI. Manage multiple accounts, auto-2FA with MAFiles, Docker ready. Open source.

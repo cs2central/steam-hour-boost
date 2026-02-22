@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "build": "node scripts/build-all.js"
+    "build": "node scripts/build-all.js",
+    "test": "jest --verbose"
   },
   "keywords": [
     "steam",
@@ -17,7 +18,11 @@
     "idler",
     "gaming"
   ],
-  "author": "",
+  "author": "cs2central",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cs2central/steam-hour-boost"
+  },
   "license": "MIT",
   "dependencies": {
     "adm-zip": "^0.5.10",
@@ -30,9 +35,10 @@
     "steam-user": "^5.0.9"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3",
     "@yao-pkg/pkg": "^5.11.0",
-    "archiver": "^6.0.1"
+    "archiver": "^6.0.1",
+    "jest": "^30.2.0",
+    "nodemon": "^3.0.3"
   },
   "pkg": {
     "scripts": [
@@ -46,8 +52,8 @@
       "node_modules/@doctormckay/steam-crypto/*.pem"
     ],
     "targets": [
-      "node18-linux-x64",
-      "node18-linux-arm64"
+      "node22-linux-x64",
+      "node22-linux-arm64"
     ],
     "outputPath": "dist"
   },

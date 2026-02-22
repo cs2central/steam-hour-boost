@@ -16,37 +16,35 @@
 
 ---
 
-## First Release
+## Release Template
 
-**Tag:** `v0.1.0-beta`
+When creating a new GitHub release, use the following structure:
 
-**Title:** Steam Hour Boost v0.1.0-beta
+**Tag:** `vX.Y.Z`
+
+**Title:** Steam Hour Boost vX.Y.Z
 
 **Body:**
 
 ```
-First public beta release of Steam Hour Boost.
+Brief summary of what changed in this release.
 
 ## Features
-- Multi-account support with unlimited Steam accounts
-- Modern dark-themed web dashboard
-- MAFile import (folder picker or ZIP upload)
-- Automatic Steam Guard 2FA using shared_secret
-- Idle up to 32 games per account
-- Configurable persona status (Online, Away, Invisible)
-- Auto-reconnect on disconnection
-- Docker ready with one-command deployment
-- Persistent state across restarts
+- List new features
+
+## Bug Fixes
+- List bug fixes
 
 ## Requirements
 - Node.js 18+ or Docker
 - Steam accounts with MAFiles for 2FA
 
 ## Notes
-- This is a beta release - please report issues on GitHub
 - Steam credentials are stored locally in SQLite
 - For production, use HTTPS via reverse proxy
 ```
+
+See RELEASE.md for the full release checklist.
 
 ---
 

@@ -5,6 +5,8 @@ npm-debug.log
 .env
 *.md
 .DS_Store
-data/*.db
+data
+docs
+.claude
 mafiles/*
 !mafiles/.gitkeep

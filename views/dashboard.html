@@ -3,151 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Steam Hour Boost - Dashboard">
   <title>Dashboard - Hour Boost</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2358a6ff' stroke-width='2'><path d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>">
   <link rel="stylesheet" href="/css/style.css">
-  <style>
-    .getting-started-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 16px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      transition: border-color 0.2s;
-    }
-    .step-item.completed {
-      border-color: var(--success);
-      background: rgba(16, 185, 129, 0.05);
-    }
-    .step-number {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 0.875rem;
-      flex-shrink: 0;
-    }
-    .step-item.completed .step-number {
-      background: var(--success);
-    }
-    .step-content {
-      flex: 1;
-    }
-    .step-title {
-      font-weight: 600;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-    }
-    .step-desc {
-      font-size: 0.875rem;
-      margin: 0;
-    }
-    .step-status {
-      flex-shrink: 0;
-      color: var(--success);
-    }
-    .step-status svg {
-      width: 24px;
-      height: 24px;
-    }
-  </style>
 </head>
 <body>
+  <noscript><p class="noscript-warning">JavaScript is required to use Hour Boost.</p></noscript>
   <div class="app-layout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-          </svg>
-          <h1>Hour Boost</h1>
-        </div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <div class="nav-section">
-          <div class="nav-section-title">Main</div>
-          <a href="/" class="nav-link active">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7"/>
-              <rect x="14" y="3" width="7" height="7"/>
-              <rect x="14" y="14" width="7" height="7"/>
-              <rect x="3" y="14" width="7" height="7"/>
-            </svg>
-            Dashboard
-          </a>
-          <a href="/accounts" class="nav-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Accounts
-          </a>
-          <a href="/mafiles" class="nav-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            MAFiles
-          </a>
-          <a href="/stats" class="nav-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
-            </svg>
-            Stats
-          </a>
-        </div>
-
-        <div class="nav-section">
-          <div class="nav-section-title">Settings</div>
-          <a href="/settings" class="nav-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            Settings
-          </a>
-        </div>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="sidebar-links">
-          <a href="https://github.com/cs2central/steam-authenticator-linux" target="_blank" title="GitHub">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-          </a>
-          <a href="https://discord.gg/cs2central" target="_blank" title="Discord">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
-            </svg>
-          </a>
-          <a href="https://cs2central.gg" target="_blank" title="Website">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </a>
-        </div>
-        <div class="sidebar-version">Hour Boost v1.1.0-beta</div>
-      </div>
-    </aside>
+    <script src="/js/sidebar.js"></script>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -156,7 +20,17 @@
         <p class="page-subtitle">Monitor and control your Steam accounts</p>
       </header>
 
-      <div class="page-content">
+      <!-- Loading indicator shown during initial data fetch -->
+      <div id="dashboard-loading" style="text-align: center; padding: 64px 24px;" aria-live="polite" aria-label="Loading dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:36px;height:36px;color:var(--text-muted);margin:0 auto 12px;display:block;animation:spin 1s linear infinite;" aria-hidden="true">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <p class="text-muted">Loading dashboard...</p>
+      </div>
+
+
+      <div class="page-content" id="dashboard-content" style="display: none;">
         <!-- Getting Started Guide (dismissible) -->
         <div id="getting-started" class="card mb-24" style="display: none; border-color: var(--primary); background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(99, 102, 241, 0.02) 100%);">
           <div class="card-header" style="border-bottom-color: var(--primary);">
@@ -373,11 +247,17 @@
     </main>
   </div>
 
+  <script src="/js/games.js"></script>
   <script src="/js/app.js"></script>
   <script>
-    let sessionStartTime = Date.now();
+    let sessionStartTime = null;
+    let _dashboardLoaded = false;
 
     function updateSessionTime() {
+      if (!sessionStartTime) {
+        document.getElementById('stat-hours').textContent = '0h';
+        return;
+      }
       const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000 / 60 / 60);
       document.getElementById('stat-hours').textContent = elapsed + 'h';
     }
@@ -393,10 +273,30 @@
           API.get('/api/settings')
         ]);
 
+        // Show content, hide loading indicator on first successful load
+        if (!_dashboardLoaded) {
+          _dashboardLoaded = true;
+          document.getElementById('dashboard-loading').style.display = 'none';
+          document.getElementById('dashboard-content').style.display = 'block';
+        }
+
         // Update stats
         document.getElementById('stat-total').textContent = data.stats.totalAccounts || 0;
         document.getElementById('stat-active').textContent = data.stats.activeIdling || 0;
         document.getElementById('stat-errors').textContent = data.stats.errors || 0;
+
+        // Compute session start time from earliest active session among idling accounts
+        const idlingAccounts = data.accounts.filter(a => a.is_idling && a.session_started_at);
+        if (idlingAccounts.length > 0) {
+          const earliest = idlingAccounts.reduce((min, a) => {
+            const t = new Date(a.session_started_at).getTime();
+            return t < min ? t : min;
+          }, Infinity);
+          sessionStartTime = earliest;
+        } else {
+          sessionStartTime = null;
+        }
+        updateSessionTime();
 
         // Update getting started guide
         updateGettingStarted(data.accounts, mafiles, settings);
@@ -417,6 +317,13 @@
         renderLogs(data.logs);
       } catch (err) {
         console.error('Failed to load dashboard:', err);
+        // Show content area even on error (after first attempt) so the page is not stuck on the spinner
+        if (!_dashboardLoaded) {
+          _dashboardLoaded = true;
+          document.getElementById('dashboard-loading').style.display = 'none';
+          document.getElementById('dashboard-content').style.display = 'block';
+        }
+        showToast('Failed to load dashboard data', 'error');
       }
     }
 
@@ -535,24 +442,6 @@
       }).join('');
     }
 
-    // Use GAME_NAMES from app.js, add short name helper
-    const SHORT_GAME_NAMES = {
-      730: 'CS2',
-      570: 'Dota 2',
-      440: 'TF2',
-      252490: 'Rust',
-      578080: 'PUBG',
-      1172470: 'Apex',
-      271590: 'GTA V',
-      359550: 'R6 Siege',
-      1623730: 'Palworld',
-      892970: 'Valheim'
-    };
-
-    function getShortGameName(appId) {
-      return SHORT_GAME_NAMES[appId] || `ID: ${appId}`;
-    }
-
     function getStatusClass(status, incomplete) {
       if (incomplete) return 'badge-warning';
       switch (status) {
@@ -581,12 +470,15 @@
         return;
       }
 
-      container.innerHTML = logs.map(log => `
-        <div class="log-entry log-${log.level}">
+      const validLevels = ['info', 'warn', 'error', 'debug'];
+      container.innerHTML = logs.map(log => {
+        const level = validLevels.includes(log.level) ? log.level : 'info';
+        return `
+        <div class="log-entry log-${level}">
           <span class="log-time">${new Date(log.timestamp).toLocaleTimeString()}</span>
-          <span class="log-message">${log.message}</span>
-        </div>
-      `).join('');
+          <span class="log-message">${escapeHtml(log.message)}</span>
+        </div>`;
+      }).join('');
     }
 
     async function startIdling(id) {
@@ -594,7 +486,7 @@
         await API.post(`/api/accounts/${id}/start`);
         loadDashboard();
       } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
       }
     }
 
@@ -603,7 +495,7 @@
         await API.post(`/api/accounts/${id}/stop`);
         loadDashboard();
       } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
       }
     }
 
@@ -612,7 +504,7 @@
         await API.post('/api/accounts/start-all');
         loadDashboard();
       } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
       }
     }
 
@@ -621,13 +513,21 @@
         await API.post('/api/accounts/stop-all');
         loadDashboard();
       } catch (err) {
-        alert(err.message);
+        showToast(err.message, 'error');
       }
     }
 
-    // Initial load and polling
+    // Initial load and polling with visibility check
     loadDashboard();
-    setInterval(loadDashboard, 5000);
+    let dashboardInterval = setInterval(loadDashboard, 15000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearInterval(dashboardInterval);
+      } else {
+        loadDashboard();
+        dashboardInterval = setInterval(loadDashboard, 15000);
+      }
+    });
   </script>
 </body>
 </html>

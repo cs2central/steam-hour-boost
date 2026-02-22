@@ -43,11 +43,26 @@ class Logger {
     const categoryTag = category !== 'SYSTEM' ? `[${category}] ` : '';
     const logLine = `${timestamp} [${level.toUpperCase()}] ${categoryTag}${prefix} ${message}\n`;
 
+    // Check file size before writing; rotate if over 10MB so the file never
+    // grows unbounded between the daily cleanup job runs.
     try {
-      fs.appendFileSync(LOG_FILE, logLine);
+      if (fs.existsSync(LOG_FILE)) {
+        const stats = fs.statSync(LOG_FILE);
+        if (stats.size > 10 * 1024 * 1024) {
+          const backupFile = LOG_FILE + '.old';
+          if (fs.existsSync(backupFile)) {
+            fs.unlinkSync(backupFile);
+          }
+          fs.renameSync(LOG_FILE, backupFile);
+        }
+      }
     } catch (err) {
-      console.error('Failed to write to log file:', err);
+      console.error('Failed to rotate log file:', err);
     }
+
+    fs.appendFile(LOG_FILE, logLine, (err) => {
+      if (err) console.error('Failed to write to log file:', err);
+    });
   }
 
   log(level, message, accountId = null, category = 'SYSTEM') {

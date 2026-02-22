@@ -51,26 +51,6 @@ router.put('/api/settings', (req, res) => {
   }
 });
 
-// Change password
-router.post('/api/change-password', async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current and new password required' });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    await changePassword(req.session.userId, currentPassword, newPassword);
-    logger.info('Password changed');
-    res.json({ success: true });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
 // Clear all logs
 router.delete('/api/logs', (req, res) => {
   try {
@@ -112,6 +92,10 @@ router.post('/api/reset', (req, res) => {
     db.settings.set('default_persona_state', 1);
     db.settings.set('auto_start', 'true');
     db.settings.set('log_retention_days', 7);
+
+    // Clear encryption and API settings
+    db.settings.set('steam_api_key', null);
+    db.settings.set('api_refresh_interval', 0);
 
     // Delete all users except current
     // Since we only support single user, just redirect to setup

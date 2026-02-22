@@ -1,4 +1,5 @@
 const path = require('path');
+const crypto = require('crypto');
 const os = require('os');
 
 // Detect if running as a packaged binary (pkg)
@@ -31,7 +32,7 @@ const baseDir = getBaseDir();
 module.exports = {
   // Server settings
   port: process.env.PORT || 8869,
-  host: process.env.HOST || '0.0.0.0',
+  host: process.env.HOST || '127.0.0.1',
 
   // Paths - use external directory when packaged
   dataDir: baseDir,
@@ -41,8 +42,11 @@ module.exports = {
   dbPath: process.env.DB_PATH || path.join(baseDir, 'hour-boost.db'),
 
   // Session
-  sessionSecret: process.env.SESSION_SECRET || 'hour-boost-secret-change-me',
+  sessionSecret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
   sessionMaxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+
+  // steam-authenticator-linux shared data directory (for seamless maFile consumption)
+  authenticatorDataDir: process.env.AUTHENTICATOR_DATA_DIR || path.join(os.homedir(), '.local', 'share', 'steam-authenticator', 'maFiles'),
 
   // Steam defaults
   defaultGames: [730], // CS2

@@ -8,8 +8,11 @@ const SALT_ROUNDS = 10;
 // Cached encryption key (in-memory, per-process)
 let cachedEncryptionKey = null;
 
+// Cached user count for checkSetup (invalidated on user creation)
+let cachedUserCount = null;
+
 // Fields that should be encrypted in accounts
-const ENCRYPTED_FIELDS = ['password', 'shared_secret', 'identity_secret'];
+const ENCRYPTED_FIELDS = ['password', 'shared_secret', 'identity_secret', 'revocation_code'];
 
 /**
  * Authentication middleware
@@ -32,7 +35,10 @@ function requireAuth(req, res, next) {
  * Check if setup is needed (no users exist)
  */
 function checkSetup(req, res, next) {
-  const userCount = db.users.count();
+  if (cachedUserCount === null) {
+    cachedUserCount = db.users.count();
+  }
+  const userCount = cachedUserCount;
 
   if (userCount === 0) {
     // Allow access to setup page
@@ -73,7 +79,9 @@ async function verifyPassword(password, hash) {
  */
 async function createUser(username, password) {
   const hash = await hashPassword(password);
-  return db.users.create(username, hash);
+  const result = db.users.create(username, hash);
+  cachedUserCount = null; // Invalidate cache so checkSetup re-queries on next request
+  return result;
 }
 
 /**
@@ -190,6 +198,33 @@ async function reEncryptAllData(oldKey, newKey) {
     } catch (err) {
       errors++;
       logger.error(`Failed to re-encrypt account ${account.id}: ${err.message}`, account.id, 'ENCRYPTION');
+    }
+  }
+
+  // Also re-encrypt secrets stored in mafiles table
+  const mafiles = db.mafiles.findAll();
+  const MAFILE_SECRET_FIELDS = ['shared_secret', 'identity_secret'];
+
+  for (const mafile of mafiles) {
+    try {
+      const updates = {};
+
+      for (const field of MAFILE_SECRET_FIELDS) {
+        if (mafile[field]) {
+          if (isEncrypted(mafile[field])) {
+            updates[field] = reEncrypt(mafile[field], oldKey, newKey);
+          } else {
+            updates[field] = encrypt(mafile[field], newKey);
+          }
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        db.mafiles.updateSecrets(mafile.id, updates);
+      }
+    } catch (err) {
+      errors++;
+      logger.error(`Failed to re-encrypt MAFile ${mafile.id}: ${err.message}`, null, 'ENCRYPTION');
     }
   }
 

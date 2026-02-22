@@ -115,6 +115,15 @@ router.get('/api/stats', async (req, res) => {
   }
 });
 
+// Validate :id parameter
+router.param('id', (req, res, next, value) => {
+  const id = parseInt(value, 10);
+  if (isNaN(id) || id < 1) {
+    return res.status(400).json({ error: 'Invalid account ID' });
+  }
+  next();
+});
+
 // Get stats for a specific account
 router.get('/api/stats/:id', async (req, res) => {
   try {
@@ -151,7 +160,7 @@ router.get('/api/stats/:id', async (req, res) => {
         started_at: session.started_at,
         ended_at: session.ended_at,
         duration_minutes: duration,
-        games_played: JSON.parse(session.games_played || '[]')
+        games_played: (() => { try { return JSON.parse(session.games_played || '[]'); } catch { return []; } })()
       };
     });
 

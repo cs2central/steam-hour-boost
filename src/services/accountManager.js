@@ -40,7 +40,7 @@ class AccountManager {
       identity_secret: data.identity_secret || null,
       steam_id: data.steam_id || null,
       display_name: data.display_name || null,
-      persona_state: data.persona_state || 1
+      persona_state: data.persona_state ?? 1
     };
 
     // Encrypt sensitive fields
@@ -121,8 +121,9 @@ class AccountManager {
    */
   getAll() {
     const accounts = db.accounts.findAll();
+    const allGames = db.games.getAllGrouped();
     return accounts.map(acc => {
-      acc.games = db.games.getGames(acc.id);
+      acc.games = allGames[acc.id] || [];
       return acc;
     });
   }
@@ -270,8 +271,9 @@ class AccountManager {
    */
   search(query) {
     const accounts = db.accounts.search(query);
+    const allGames = db.games.getAllGrouped();
     return accounts.map(acc => {
-      acc.games = db.games.getGames(acc.id);
+      acc.games = allGames[acc.id] || [];
       return acc;
     });
   }

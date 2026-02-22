@@ -7,6 +7,7 @@ const {
   initializeEncryption,
   setEncryptionKey,
   getEncryptionKey,
+  clearEncryptionKey,
   reEncryptAllData,
   isEncryptionInitialized
 } = require('../middleware/auth');
@@ -30,8 +31,16 @@ router.post('/api/setup', rateLimiters.setup, async (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
+    if (username.length > 128) {
+      return res.status(400).json({ error: 'Username must be 128 characters or fewer' });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    if (password.length > 256) {
+      return res.status(400).json({ error: 'Password must be 256 characters or fewer' });
     }
 
     // Initialize encryption with the admin password
@@ -140,6 +149,7 @@ router.post('/api/login', rateLimiters.login, async (req, res) => {
 
 // Logout
 router.post('/api/logout', (req, res) => {
+  clearEncryptionKey();
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ error: 'Failed to logout' });
