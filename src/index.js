@@ -170,17 +170,28 @@ async function startServer() {
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 
-  // Handle unrecoverable errors with graceful shutdown
+  // Log unrecoverable errors but keep the process alive
+  // Steam disconnections can cause transient errors that shouldn't kill the process
   process.on('uncaughtException', (err) => {
-    logger.error(`Uncaught exception: ${err.message}`);
-    console.error('Uncaught exception:', err.stack);
-    shutdown();
+    // Must be bulletproof - another throw here terminates Node immediately
+    try {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(`Uncaught exception: ${msg}`);
+      console.error('Uncaught exception:', err);
+    } catch (logErr) {
+      console.error('Uncaught exception (logger also failed):', err, logErr);
+    }
+    // Don't shutdown - keep running so accounts can reconnect
   });
 
   process.on('unhandledRejection', (reason) => {
-    const msg = reason instanceof Error ? reason.message : String(reason);
-    logger.error(`Unhandled rejection: ${msg}`);
-    console.error('Unhandled rejection:', reason);
+    try {
+      const msg = reason instanceof Error ? reason.message : String(reason);
+      logger.error(`Unhandled rejection: ${msg}`);
+      console.error('Unhandled rejection:', reason);
+    } catch (logErr) {
+      console.error('Unhandled rejection (logger also failed):', reason, logErr);
+    }
   });
 
   // Start server

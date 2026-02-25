@@ -23,99 +23,139 @@ class SteamSession {
 
   setupEventHandlers() {
     this.client.on('loggedOn', () => {
-      this.isLoggedIn = true;
-      this.isConnecting = false;
-      this.reconnectAttempts = 0;
+      try {
+        this.isLoggedIn = true;
+        this.isConnecting = false;
+        this.reconnectAttempts = 0;
 
-      // Cancel any pending reconnect timer
-      if (this.reconnectTimeout) {
-        clearTimeout(this.reconnectTimeout);
-        this.reconnectTimeout = null;
-      }
-
-      // Reset failed login counter on successful login
-      this.resetLockout();
-
-      logger.info(`Logged in successfully`, this.accountId, 'STEAM');
-      accountManager.updateStatus(this.accountId, 'online');
-
-      // Set persona state based on account settings
-      const personaState = this.accountData.persona_state ?? 1;
-      this.client.setPersona(personaState);
-      const stateNames = { 1: 'Online', 3: 'Away', 7: 'Invisible' };
-      logger.info(`Set persona state: ${stateNames[personaState] || personaState}`, this.accountId);
-
-      // Get account info
-      if (this.client.steamID) {
-        db.accounts.update(this.accountId, {
-          steam_id: this.client.steamID.toString()
-        });
-      }
-
-      // Resume idling if we were idling before disconnect/error
-      if (this.currentGames.length > 0) {
-        const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
-        if (shouldIdle) {
-          this.isIdling = true;
-          this.sessionId = db.sessions.start(this.accountId, this.currentGames).lastInsertRowid;
-          logger.info(`Resuming idle for games: ${this.currentGames.join(', ')}`, this.accountId);
-          accountManager.updateStatus(this.accountId, 'idling');
-          accountManager.setIdling(this.accountId, true);
-          this.client.gamesPlayed(this.currentGames);
+        // Cancel any pending reconnect timer
+        if (this.reconnectTimeout) {
+          clearTimeout(this.reconnectTimeout);
+          this.reconnectTimeout = null;
         }
+
+        // Reset failed login counter on successful login
+        this.resetLockout();
+
+        logger.info(`Logged in successfully`, this.accountId, 'STEAM');
+        accountManager.updateStatus(this.accountId, 'online');
+
+        // Set persona state based on account settings
+        const personaState = this.accountData.persona_state ?? 1;
+        this.client.setPersona(personaState);
+        const stateNames = { 1: 'Online', 3: 'Away', 7: 'Invisible' };
+        logger.info(`Set persona state: ${stateNames[personaState] || personaState}`, this.accountId);
+
+        // Get account info
+        if (this.client.steamID) {
+          db.accounts.update(this.accountId, {
+            steam_id: this.client.steamID.toString()
+          });
+        }
+
+        // Resume idling if we were idling before disconnect/error
+        if (this.currentGames.length > 0) {
+          const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
+          if (shouldIdle) {
+            this.isIdling = true;
+            this.sessionId = db.sessions.start(this.accountId, this.currentGames).lastInsertRowid;
+            logger.info(`Resuming idle for games: ${this.currentGames.join(', ')}`, this.accountId);
+            accountManager.updateStatus(this.accountId, 'idling');
+            accountManager.setIdling(this.accountId, true);
+            this.client.gamesPlayed(this.currentGames);
+          }
+        }
+      } catch (err) {
+        logger.error(`Error in loggedOn handler: ${err.message}`, this.accountId, 'STEAM');
       }
     });
 
     this.client.on('accountInfo', (name) => {
-      logger.info(`Account name: ${name}`, this.accountId);
-      db.accounts.update(this.accountId, { display_name: name });
+      try {
+        logger.info(`Account name: ${name}`, this.accountId);
+        db.accounts.update(this.accountId, { display_name: name });
+      } catch (err) {
+        // Non-critical: display name update failed
+      }
     });
 
     this.client.on('error', (err) => {
       this.isLoggedIn = false;
       this.isConnecting = false;
-      this.isIdling = false;
-      const errorMsg = err.message || String(err);
-      logger.error(`Steam error: ${errorMsg}`, this.accountId, 'STEAM');
-      accountManager.updateStatus(this.accountId, 'error', errorMsg);
 
-      // Handle specific errors
-      if (err.eresult === SteamUser.EResult.InvalidPassword) {
-        logger.error('Invalid password', this.accountId, 'STEAM');
-        // Track failed login for lockout
-        this.handleFailedLogin();
-        return; // Don't reconnect for invalid password
+      try {
+        const errorMsg = err.message || String(err);
+        logger.error(`Steam error: ${errorMsg}`, this.accountId, 'STEAM');
+        accountManager.updateStatus(this.accountId, 'error', errorMsg);
+      } catch (logErr) {
+        // DB write failed, continue with reconnect logic anyway
       }
 
-      if (err.eresult === SteamUser.EResult.AccountLogonDenied) {
-        logger.error('Steam Guard code required', this.accountId, 'STEAM');
-        return;
+      // Handle specific errors that should NOT reconnect
+      try {
+        if (err.eresult === SteamUser.EResult.InvalidPassword) {
+          logger.error('Invalid password', this.accountId, 'STEAM');
+          this.isIdling = false;
+          this.handleFailedLogin();
+          return;
+        }
+
+        if (err.eresult === SteamUser.EResult.AccountLogonDenied) {
+          logger.error('Steam Guard code required', this.accountId, 'STEAM');
+          this.isIdling = false;
+          return;
+        }
+
+        if (err.eresult === SteamUser.EResult.RateLimitExceeded) {
+          logger.error('Steam rate limit exceeded', this.accountId, 'STEAM');
+          this.isIdling = false;
+          this.handleRateLimited();
+          return;
+        }
+      } catch (termErr) {
+        // Terminal error handling failed, fall through to reconnect
       }
 
-      if (err.eresult === SteamUser.EResult.RateLimitExceeded) {
-        logger.error('Steam rate limit exceeded', this.accountId, 'STEAM');
-        // Set a longer lockout for rate limiting
-        this.handleRateLimited();
-        return;
+      // End current session tracking (we'll start a new one on reconnect)
+      try {
+        if (this.sessionId) {
+          db.sessions.end(this.sessionId);
+          this.sessionId = null;
+        }
+      } catch (sessErr) {
+        this.sessionId = null;
       }
 
-      // Attempt reconnect for other errors
+      // Always attempt reconnect for non-terminal errors
       this.scheduleReconnect();
     });
 
     this.client.on('disconnected', (eresult, msg) => {
       this.isLoggedIn = false;
       this.isConnecting = false;
-      logger.warn(`Disconnected: ${msg} (${eresult})`, this.accountId);
+
+      try {
+        logger.warn(`Disconnected: ${msg} (${eresult})`, this.accountId);
+      } catch (logErr) {
+        // DB write failed, continue anyway
+      }
 
       // End current session tracking to prevent orphaned sessions
-      if (this.sessionId) {
-        db.sessions.end(this.sessionId);
+      try {
+        if (this.sessionId) {
+          db.sessions.end(this.sessionId);
+          this.sessionId = null;
+        }
+      } catch (sessErr) {
         this.sessionId = null;
       }
 
       if (this.isIdling) {
-        accountManager.updateStatus(this.accountId, 'offline');
+        try {
+          accountManager.updateStatus(this.accountId, 'offline');
+        } catch (statusErr) {
+          // DB write failed, continue to reconnect anyway
+        }
         this.scheduleReconnect();
       }
     });
@@ -148,33 +188,51 @@ class SteamSession {
       clearTimeout(this.reconnectTimeout);
     }
 
-    if (this.reconnectAttempts >= config.maxReconnectAttempts) {
-      logger.error(`Max reconnect attempts reached`, this.accountId);
-      accountManager.updateStatus(this.accountId, 'error', 'Max reconnect attempts reached');
-      return;
+    this.reconnectAttempts++;
+
+    // After max attempts, use a longer retry interval (5 minutes) instead of giving up
+    let delay;
+    if (this.reconnectAttempts > config.maxReconnectAttempts) {
+      delay = 5 * 60 * 1000; // 5 minutes between retries after max attempts
+    } else {
+      delay = config.reconnectDelay * this.reconnectAttempts;
     }
 
-    this.reconnectAttempts++;
-    const delay = config.reconnectDelay * this.reconnectAttempts;
-
-    logger.info(`Scheduling reconnect in ${delay / 1000}s (attempt ${this.reconnectAttempts})`, this.accountId);
+    // Log and update status - wrapped so DB failures can't prevent the setTimeout
+    try {
+      if (this.reconnectAttempts === config.maxReconnectAttempts + 1) {
+        logger.warn(`Max reconnect attempts reached, switching to 5-minute retry interval`, this.accountId);
+        accountManager.updateStatus(this.accountId, 'error', 'Reconnecting (extended interval)');
+      }
+      logger.info(`Scheduling reconnect in ${delay / 1000}s (attempt ${this.reconnectAttempts})`, this.accountId);
+    } catch (err) {
+      // DB write failed, still proceed with scheduling the reconnect
+    }
 
     this.reconnectTimeout = setTimeout(async () => {
       this.reconnectTimeout = null;
 
-      // Skip if already logged in or connecting (auto-relogin may have handled it)
+      // Skip if already logged in or connecting
       if (this.isLoggedIn || this.isConnecting) {
         return;
       }
 
-      const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
-      if (!shouldIdle) return;
+      try {
+        const shouldIdle = this.isIdling || db.accounts.findById(this.accountId)?.is_idling;
+        if (!shouldIdle) return;
+      } catch (err) {
+        logger.error(`Error checking idle state: ${err.message}`, this.accountId);
+      }
 
       try {
         await this.login();
         // loggedOn handler will resume games automatically
       } catch (err) {
         logger.error(`Reconnect failed: ${err.message}`, this.accountId);
+        // Only reschedule if the persistent error handler hasn't already done so
+        if (!this.reconnectTimeout) {
+          this.scheduleReconnect();
+        }
       }
     }, delay);
   }
@@ -206,19 +264,28 @@ class SteamSession {
       }
 
       this.isConnecting = true;
-      logger.info(`Attempting login`, this.accountId, 'STEAM');
-      accountManager.updateStatus(this.accountId, 'connecting');
 
-      const loginOptions = {
-        accountName: this.accountData.username,
-        password: this.accountData.password,
-        rememberPassword: true,
-        machineName: 'hour-boost'
-      };
+      // Prepare login options - if anything here throws, reset isConnecting
+      let loginOptions;
+      try {
+        logger.info(`Attempting login`, this.accountId, 'STEAM');
+        accountManager.updateStatus(this.accountId, 'connecting');
 
-      // Add two-factor code if shared_secret is available
-      if (this.accountData.shared_secret) {
-        loginOptions.twoFactorCode = SteamTotp.generateAuthCode(this.accountData.shared_secret);
+        loginOptions = {
+          accountName: this.accountData.username,
+          password: this.accountData.password,
+          rememberPassword: true,
+          machineName: 'hour-boost'
+        };
+
+        // Add two-factor code if shared_secret is available
+        if (this.accountData.shared_secret) {
+          loginOptions.twoFactorCode = SteamTotp.generateAuthCode(this.accountData.shared_secret);
+        }
+      } catch (prepErr) {
+        this.isConnecting = false;
+        reject(prepErr);
+        return;
       }
 
       const onLoggedOn = () => {
