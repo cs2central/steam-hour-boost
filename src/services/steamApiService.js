@@ -254,45 +254,48 @@ class SteamApiService {
 
     const data = await this.fetchAllPlayerData(steamId);
 
-    // Update account with summary data
-    if (data.summary) {
-      this.db.accounts.update(accountId, {
-        display_name: data.summary.displayName,
-        avatar_url: data.summary.avatarUrl,
-        profile_visibility: data.summary.visibility,
-        account_created: data.summary.timeCreated ? data.summary.timeCreated.toISOString() : null
-      });
-    }
-
-    // Update ban status
-    if (data.bans) {
-      this.db.accounts.update(accountId, {
-        vac_banned: data.bans.vacBanned ? 1 : 0,
-        trade_banned: data.bans.economyBan === 'banned' ? 1 : 0,
-        game_bans: data.bans.gameBans
-      });
-    }
-
-    // Update playtime data
-    if (data.games.length > 0) {
-      this.db.accounts.update(accountId, {
-        total_games: data.games.length
-      });
-
-      // Store detailed playtime
-      for (const game of data.games) {
-        this.db.playtime.upsert(accountId, {
-          app_id: game.appId,
-          playtime_forever: game.playtimeForever,
-          playtime_2weeks: game.playtime2Weeks,
-          last_played: game.lastPlayed ? game.lastPlayed.toISOString() : null
+    // Batch all DB writes into a single disk save
+    this.db.batch(() => {
+      // Update account with summary data
+      if (data.summary) {
+        this.db.accounts.update(accountId, {
+          display_name: data.summary.displayName,
+          avatar_url: data.summary.avatarUrl,
+          profile_visibility: data.summary.visibility,
+          account_created: data.summary.timeCreated ? data.summary.timeCreated.toISOString() : null
         });
       }
-    }
 
-    // Update last refresh timestamp
-    this.db.accounts.update(accountId, {
-      api_last_refresh: new Date().toISOString()
+      // Update ban status
+      if (data.bans) {
+        this.db.accounts.update(accountId, {
+          vac_banned: data.bans.vacBanned ? 1 : 0,
+          trade_banned: data.bans.economyBan === 'banned' ? 1 : 0,
+          game_bans: data.bans.gameBans
+        });
+      }
+
+      // Update playtime data
+      if (data.games.length > 0) {
+        this.db.accounts.update(accountId, {
+          total_games: data.games.length
+        });
+
+        // Store detailed playtime
+        for (const game of data.games) {
+          this.db.playtime.upsert(accountId, {
+            app_id: game.appId,
+            playtime_forever: game.playtimeForever,
+            playtime_2weeks: game.playtime2Weeks,
+            last_played: game.lastPlayed ? game.lastPlayed.toISOString() : null
+          });
+        }
+      }
+
+      // Update last refresh timestamp
+      this.db.accounts.update(accountId, {
+        api_last_refresh: new Date().toISOString()
+      });
     });
 
     logger.info(`Refreshed Steam API data for account ${accountId}`, accountId, 'API');

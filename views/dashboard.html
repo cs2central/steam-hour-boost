@@ -447,6 +447,7 @@
       switch (status) {
         case 'idling': return 'badge-info';
         case 'online': return 'badge-success';
+        case 'paused': return 'badge-warning';
         case 'error': return 'badge-error';
         default: return 'badge-muted';
       }
@@ -458,6 +459,7 @@
         case 'idling': return 'Idling';
         case 'online': return 'Online';
         case 'connecting': return 'Connecting';
+        case 'paused': return 'Paused (user playing)';
         case 'error': return 'Error';
         default: return 'Offline';
       }

@@ -16,6 +16,7 @@ class SteamSession {
     this.reconnectAttempts = 0;
     this.reconnectTimeout = null;
     this.isConnecting = false;
+    this.isPaused = false;
     this.sessionId = null;
 
     this.setupEventHandlers();
@@ -126,6 +127,19 @@ class SteamSession {
         this.sessionId = null;
       }
 
+      // User logged in elsewhere — wait longer before reconnecting
+      try {
+        if (err.eresult === SteamUser.EResult.LoggedInElsewhere ||
+            err.eresult === SteamUser.EResult.LogonSessionReplaced) {
+          logger.info('User logged in elsewhere, waiting 5 minutes before reconnect', this.accountId, 'STEAM');
+          accountManager.updateStatus(this.accountId, 'paused', 'User logged in elsewhere');
+          this.scheduleReconnect(5 * 60 * 1000);
+          return;
+        }
+      } catch (elseErr) {
+        // Fall through to normal reconnect
+      }
+
       // Always attempt reconnect for non-terminal errors
       this.scheduleReconnect();
     });
@@ -177,13 +191,26 @@ class SteamSession {
     });
 
     this.client.on('playingState', (blocked, playingApp) => {
-      if (blocked) {
-        logger.warn(`Playing blocked by another session (game: ${playingApp})`, this.accountId);
+      try {
+        if (blocked) {
+          this.isPaused = true;
+          logger.info(`Paused: user is playing game ${playingApp || 'unknown'}`, this.accountId);
+          accountManager.updateStatus(this.accountId, 'paused', `User playing game ${playingApp || 'unknown'}`);
+        } else if (this.isPaused) {
+          this.isPaused = false;
+          logger.info(`User stopped playing, resuming idle`, this.accountId);
+          if (this.isIdling && this.currentGames.length > 0 && this.isLoggedIn) {
+            this.client.gamesPlayed(this.currentGames);
+            accountManager.updateStatus(this.accountId, 'idling');
+          }
+        }
+      } catch (err) {
+        logger.error(`Error in playingState handler: ${err.message}`, this.accountId);
       }
     });
   }
 
-  scheduleReconnect() {
+  scheduleReconnect(minDelay = 0) {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
     }
@@ -197,6 +224,9 @@ class SteamSession {
     } else {
       delay = config.reconnectDelay * this.reconnectAttempts;
     }
+
+    // Honour minimum delay (e.g. user logged in elsewhere)
+    delay = Math.max(delay, minDelay);
 
     // Log and update status - wrapped so DB failures can't prevent the setTimeout
     try {
@@ -246,7 +276,7 @@ class SteamSession {
 
       if (this.isConnecting) {
         logger.debug(`Already connecting, skipping duplicate login`, this.accountId, 'STEAM');
-        resolve();
+        reject(new Error('Login already in progress'));
         return;
       }
 
@@ -288,12 +318,25 @@ class SteamSession {
         return;
       }
 
+      // Timeout: if Steam never responds, reset state and reject
+      const loginTimeout = setTimeout(() => {
+        this.isConnecting = false;
+        this.client.removeListener('loggedOn', onLoggedOn);
+        this.client.removeListener('error', onError);
+        logger.warn('Login attempt timed out after 30s', this.accountId, 'STEAM');
+        accountManager.updateStatus(this.accountId, 'error', 'Login timed out');
+        try { this.client.logOff(); } catch (e) { /* ignore */ }
+        reject(new Error('Login timed out'));
+      }, 30000);
+
       const onLoggedOn = () => {
+        clearTimeout(loginTimeout);
         this.client.removeListener('error', onError);
         resolve();
       };
 
       const onError = (err) => {
+        clearTimeout(loginTimeout);
         this.isConnecting = false;
         this.client.removeListener('loggedOn', onLoggedOn);
         reject(err);
@@ -305,6 +348,7 @@ class SteamSession {
       try {
         this.client.logOn(loginOptions);
       } catch (err) {
+        clearTimeout(loginTimeout);
         this.isConnecting = false;
         this.client.removeListener('loggedOn', onLoggedOn);
         this.client.removeListener('error', onError);
@@ -333,6 +377,7 @@ class SteamSession {
 
   stopGames() {
     this.isIdling = false;
+    this.isPaused = false;
     this.currentGames = [];
 
     // Cancel pending reconnect since we're intentionally stopping
@@ -370,6 +415,7 @@ class SteamSession {
     }
 
     this.isIdling = false;
+    this.isPaused = false;
     this.isLoggedIn = false;
     this.isConnecting = false;
     this.currentGames = [];
@@ -385,6 +431,7 @@ class SteamSession {
     return {
       isLoggedIn: this.isLoggedIn,
       isIdling: this.isIdling,
+      isPaused: this.isPaused,
       currentGames: this.currentGames,
       steamId: this.client.steamID?.toString(),
       personaName: this.client.accountInfo?.name
@@ -473,6 +520,7 @@ class SteamSession {
 class SteamService {
   constructor() {
     this.sessions = new Map(); // accountId -> SteamSession
+    this._resuming = false;
   }
 
   /**
@@ -597,6 +645,21 @@ class SteamService {
    * Resume idling for accounts that were idling before restart
    */
   async resumeIdling() {
+    if (this._resuming) {
+      logger.debug('resumeIdling already in progress, skipping');
+      return;
+    }
+
+    // Close any sessions left open from a previous crash
+    try {
+      const result = db.sessions.closeOrphaned();
+      if (result.changes > 0) {
+        logger.info(`Closed ${result.changes} orphaned sessions from previous run`);
+      }
+    } catch (err) {
+      logger.warn(`Failed to close orphaned sessions: ${err.message}`);
+    }
+
     const idlingAccounts = accountManager.getIdlingAccounts();
     logger.info(`Resuming idling for ${idlingAccounts.length} accounts`);
 
@@ -605,19 +668,24 @@ class SteamService {
       return;
     }
 
-    const results = await Promise.allSettled(
-      idlingAccounts.map(account =>
-        this.startIdling(account.id).then(() => {
-          logger.info(`Resumed idling for ${account.username}`, account.id);
-        })
-      )
-    );
+    this._resuming = true;
+    try {
+      const results = await Promise.allSettled(
+        idlingAccounts.map(account =>
+          this.startIdling(account.id).then(() => {
+            logger.info(`Resumed idling for ${account.username}`, account.id);
+          })
+        )
+      );
 
-    for (let i = 0; i < results.length; i++) {
-      if (results[i].status === 'rejected') {
-        const account = idlingAccounts[i];
-        logger.error(`Failed to resume idling for ${account.username}: ${results[i].reason.message}`, account.id);
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].status === 'rejected') {
+          const account = idlingAccounts[i];
+          logger.error(`Failed to resume idling for ${account.username}: ${results[i].reason.message}`, account.id);
+        }
       }
+    } finally {
+      this._resuming = false;
     }
   }
 

@@ -195,12 +195,22 @@ async function initializeDatabase() {
     )
   `);
 
+  db.run(`
+    -- Web sessions (express-session store)
+    CREATE TABLE IF NOT EXISTS web_sessions (
+      sid TEXT PRIMARY KEY,
+      sess TEXT NOT NULL,
+      expires INTEGER NOT NULL
+    )
+  `);
+
   // Create indexes (category index created in migration after column exists)
   db.run('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)');
   db.run('CREATE INDEX IF NOT EXISTS idx_logs_account ON logs(account_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_sessions_account ON sessions(account_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_account_games_account ON account_games(account_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_account_playtime_account ON account_playtime(account_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_web_sessions_expires ON web_sessions(expires)');
 
   // Run migrations for existing databases
   runMigrations();
@@ -507,14 +517,15 @@ const gameMethods = {
   },
 
   setGames(accountId, games) {
-    db.run('DELETE FROM account_games WHERE account_id = ?', [accountId]);
-    for (const game of games) {
-      const appId = game.app_id || game;
-      const appName = game.app_name || null;
-      db.run('INSERT INTO account_games (account_id, app_id, app_name) VALUES (?, ?, ?)',
-        [accountId, appId, appName]);
-    }
-    saveDatabase();
+    batch(() => {
+      run('DELETE FROM account_games WHERE account_id = ?', [accountId]);
+      for (const game of games) {
+        const appId = game.app_id || game;
+        const appName = game.app_name || null;
+        run('INSERT INTO account_games (account_id, app_id, app_name) VALUES (?, ?, ?)',
+          [accountId, appId, appName]);
+      }
+    });
   },
 
   getAllGrouped() {
@@ -605,6 +616,14 @@ const sessionMethods = {
   getHistory(accountId, limit = 50) {
     return all('SELECT * FROM sessions WHERE account_id = ? ORDER BY started_at DESC LIMIT ?',
       [accountId, limit]);
+  },
+
+  closeOrphaned() {
+    return run("UPDATE sessions SET ended_at = CURRENT_TIMESTAMP WHERE ended_at IS NULL");
+  },
+
+  getAllActive() {
+    return all('SELECT * FROM sessions WHERE ended_at IS NULL');
   }
 };
 
@@ -713,6 +732,30 @@ const settingsMethods = {
   }
 };
 
+// Web session methods (for express-session store)
+const webSessionMethods = {
+  get(sid) {
+    return get('SELECT sess FROM web_sessions WHERE sid = ? AND expires > ?', [sid, Date.now()]);
+  },
+
+  set(sid, sess, expires) {
+    return run('INSERT OR REPLACE INTO web_sessions (sid, sess, expires) VALUES (?, ?, ?)',
+      [sid, sess, expires]);
+  },
+
+  destroy(sid) {
+    return run('DELETE FROM web_sessions WHERE sid = ?', [sid]);
+  },
+
+  touch(sid, expires) {
+    return run('UPDATE web_sessions SET expires = ? WHERE sid = ?', [expires, sid]);
+  },
+
+  cleanup() {
+    return run('DELETE FROM web_sessions WHERE expires <= ?', [Date.now()]);
+  }
+};
+
 module.exports = {
   initializeDatabase,
   saveDatabase,
@@ -724,5 +767,6 @@ module.exports = {
   sessions: sessionMethods,
   logs: logMethods,
   playtime: playtimeMethods,
-  settings: settingsMethods
+  settings: settingsMethods,
+  webSessions: webSessionMethods
 };

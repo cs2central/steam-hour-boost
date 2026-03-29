@@ -8,15 +8,17 @@ const db = require('../models/database');
 router.get('/api/dashboard', (req, res) => {
   try {
     const stats = accountManager.getStats();
+
+    // Fetch all active sessions in one query instead of per-account (N+1 fix)
+    const activeSessions = db.sessions.getAllActive();
+    const sessionByAccount = {};
+    for (const s of activeSessions) {
+      sessionByAccount[s.account_id] = s;
+    }
+
     const accounts = accountManager.getAll().map(acc => {
-      // Fetch active session start time for idling accounts
-      let session_started_at = null;
-      if (acc.is_idling) {
-        const activeSession = db.sessions.getActive(acc.id);
-        if (activeSession) {
-          session_started_at = activeSession.started_at;
-        }
-      }
+      const activeSession = acc.is_idling ? sessionByAccount[acc.id] : null;
+      const session_started_at = activeSession ? activeSession.started_at : null;
       return {
         id: acc.id,
         username: acc.username,

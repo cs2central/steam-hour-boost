@@ -300,7 +300,7 @@
 
     function updateMafileSelects() {
       const options = '<option value="">-- No MAFile --</option>' +
-        mafiles.map(m => `<option value="${m.id}">${m.account_name}${m.shared_secret ? ' (2FA ready)' : ''}</option>`).join('');
+        mafiles.map(m => `<option value="${m.id}">${escapeHtml(m.account_name)}${m.shared_secret ? ' (2FA ready)' : ''}</option>`).join('');
       document.getElementById('add-mafile-select').innerHTML = options;
       document.getElementById('edit-mafile-select').innerHTML = options;
     }
@@ -395,6 +395,7 @@
         'idling': '<span class="badge badge-info"><span class="badge-dot"></span>Idling</span>',
         'online': '<span class="badge badge-success"><span class="badge-dot"></span>Online</span>',
         'connecting': '<span class="badge badge-warning"><span class="badge-dot"></span>Connecting</span>',
+        'paused': '<span class="badge badge-warning"><span class="badge-dot"></span>Paused</span>',
         'error': '<span class="badge badge-error"><span class="badge-dot"></span>Error</span>',
         'locked': '<span class="badge badge-error"><span class="badge-dot"></span>Locked</span>',
         'offline': '<span class="badge badge-muted"><span class="badge-dot"></span>Offline</span>'

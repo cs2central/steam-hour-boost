@@ -118,6 +118,7 @@ class Logger {
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
     }, 24 * 60 * 60 * 1000);
+    this.cleanupInterval.unref();
 
     // Initial cleanup on start
     this.cleanup();

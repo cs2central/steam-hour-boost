@@ -8,22 +8,12 @@ const config = require('./config');
 // Create Express app
 const app = express();
 
+// Trust first proxy (nginx/reverse proxy) so req.ip reflects the real client
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// Session configuration
-app.use(session({
-  secret: config.sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.SECURE_COOKIE === 'true',
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: config.sessionMaxAge
-  }
-}));
 
 // CSRF protection - require custom header on state-changing requests
 app.use((req, res, next) => {
@@ -66,11 +56,74 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+/**
+ * SQLite-backed session store for express-session.
+ * Eliminates the MemoryStore warning and persists sessions across restarts.
+ */
+class DbSessionStore extends session.Store {
+  constructor(db) {
+    super();
+    this.db = db;
+  }
+
+  get(sid, cb) {
+    try {
+      const row = this.db.webSessions.get(sid);
+      cb(null, row ? JSON.parse(row.sess) : null);
+    } catch (e) { cb(e); }
+  }
+
+  set(sid, sess, cb) {
+    try {
+      const maxAge = sess.cookie?.maxAge || config.sessionMaxAge;
+      const expires = Date.now() + maxAge;
+      this.db.webSessions.set(sid, JSON.stringify(sess), expires);
+      cb(null);
+    } catch (e) { cb(e); }
+  }
+
+  destroy(sid, cb) {
+    try {
+      this.db.webSessions.destroy(sid);
+      cb(null);
+    } catch (e) { cb(e); }
+  }
+
+  touch(sid, sess, cb) {
+    try {
+      const maxAge = sess.cookie?.maxAge || config.sessionMaxAge;
+      const expires = Date.now() + maxAge;
+      this.db.webSessions.touch(sid, expires);
+      cb(null);
+    } catch (e) { cb(e); }
+  }
+}
+
 // Start server after database is ready
 async function startServer() {
   // Initialize database
   const db = require('./models/database');
   await db.initializeDatabase();
+
+  // Session middleware — uses DB store now that database is ready
+  app.use(session({
+    store: new DbSessionStore(db),
+    secret: config.sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.SECURE_COOKIE === 'true',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: config.sessionMaxAge
+    }
+  }));
+
+  // Clean up expired web sessions periodically (every hour)
+  const webSessionCleanup = setInterval(() => {
+    try { db.webSessions.cleanup(); } catch (e) { /* ignore */ }
+  }, 60 * 60 * 1000);
+  webSessionCleanup.unref();
 
   // Load services after DB is ready
   const logger = require('./services/logger');
